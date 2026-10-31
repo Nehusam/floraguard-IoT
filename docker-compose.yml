@@ -1,0 +1,16 @@
+services:
+  floraguard-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: floraguard_iot_service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount data volume so SQLite database persists outside container
+      - ./floraguard.db:/app/floraguard.db
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+

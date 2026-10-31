@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.git
+.gitignore
+_backups/
+dht_sensor_test/
+soil_rain_sensor_test/
+*.ino
+

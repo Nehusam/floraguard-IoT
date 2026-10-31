@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FloraGuard IoT | Plant Disease Early Detection Dashboard</title>
+  <meta name="description" content="Clean, bright, responsive IoT Plant Disease Early Detection System dashboard powered by ESP32 microclimate telemetry, automated fungal blight risk scoring, and interactive time-series analytics.">
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            plant: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+              950: '#052e16',
+            },
+            leaf: {
+              50: '#f4fbf7',
+              100: '#e3f7ed',
+              500: '#059669',
+              600: '#047857',
+            }
+          },
+          boxShadow: {
+            'botanical': '0 4px 20px -2px rgba(16, 185, 129, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
+            'card-hover': '0 12px 28px -4px rgba(16, 185, 129, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04)',
+            'glow-emerald': '0 0 20px -3px rgba(16, 185, 129, 0.3)',
+            'glow-rose': '0 0 20px -3px rgba(244, 63, 94, 0.25)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom light scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .white-card {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      transition: all 0.25s ease-in-out;
+    }
+    .white-card:hover {
+      border-color: rgba(52, 211, 153, 0.5);
+    }
+    .pulse-ring {
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.9; }
+      50% { transform: scale(1.35); opacity: 0; }
+      100% { transform: scale(0.95); opacity: 0.9; }
+    }
+  </style>
+</head>
+
+<body class="bg-[#F8FAF9] text-slate-800 min-h-screen font-sans selection:bg-plant-500 selection:text-white antialiased">
+  
+  <!-- Bright Botanical Ambient Gradients -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-32 -left-32 w-[34rem] h-[34rem] bg-emerald-200/40 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/4 -right-28 w-[32rem] h-[32rem] bg-teal-100/60 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-10 left-1/3 w-[36rem] h-[36rem] bg-green-100/50 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 right-10 w-96 h-96 bg-lime-100/40 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="relative z-10 max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- ========================================== -->
+    <!-- 1. HEADER & LIVE STATUS BAR               -->
+    <!-- ========================================== -->
+    <header class="white-card rounded-2xl p-4 sm:p-5 shadow-botanical flex flex-col lg:flex-row items-center justify-between gap-4 border border-emerald-100/80">
+      
+      <!-- Brand & Project Title -->
+      <div class="flex items-center gap-3.5 w-full lg:w-auto">
+        <div class="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-plant-600 via-emerald-500 to-teal-400 shadow-glow-emerald text-white">
+          <i data-lucide="sprout" class="w-6 h-6"></i>
+          <span class="absolute -bottom-1 -right-1 flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-600"></span>
+          </span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+              FloraGuard <span class="text-plant-600">IoT</span>
+            </h1>
+            <span class="px-2.5 py-0.5 text-[11px] font-bold tracking-wider uppercase rounded-full bg-plant-100 text-plant-800 border border-plant-200">
+              Live Canopy Feed
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5 font-medium">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-plant-600"></i>
+            Botanical Microclimate Telemetry &amp; Plant Pathogen Early Warning System
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Status Indicators & Controls -->
+      <div class="flex flex-wrap items-center justify-between lg:justify-end gap-3 w-full lg:w-auto">
+        
+        <!-- Live Data Source Badge (Clear Hardware vs Simulation Distinction) -->
+        <div class="flex items-center">
+          <span id="telemetry-source-badge" class="px-3 py-1.5 text-xs font-bold rounded-xl border bg-amber-50 text-amber-800 border-amber-200 shadow-sm flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            SIMULATED DATA
+          </span>
+        </div>
+
+        <!-- FastAPI Backend Connection Indicator -->
+        <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 shadow-sm text-xs">
+          <div class="relative flex items-center justify-center">
+            <span id="backend-dot-ping" class="absolute w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-ring"></span>
+            <span id="backend-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase font-bold text-slate-400 leading-none">FastAPI Core</div>
+            <div id="backend-status-text" class="font-semibold text-emerald-700 text-xs mt-0.5">Connecting...</div>
+          </div>
+        </div>
+
+        <!-- ESP32 Hardware Telemetry Feed Indicator -->
+        <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 shadow-sm text-xs">
+          <div class="relative flex items-center justify-center">
+            <span id="esp32-dot-ping" class="hidden absolute w-2.5 h-2.5 rounded-full bg-teal-400 pulse-ring"></span>
+            <span id="esp32-dot" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase font-bold text-slate-400 leading-none">ESP32 Node</div>
+            <div id="esp32-status-text" class="font-mono font-semibold text-slate-600 text-xs mt-0.5">ESP32 Standby</div>
+          </div>
+        </div>
+
+        <!-- Last Heartbeat Timer -->
+        <div class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100/90 border border-slate-200/80 text-xs text-slate-600">
+          <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
+          <span>Updated: <span id="last-updated-time" class="font-mono font-semibold text-slate-800">Just now</span></span>
+        </div>
+
+        <!-- Simulation Mode Toggle Button -->
+        <button id="sim-toggle-btn" onclick="toggleSimulationMode()" 
+          class="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-xs transition-all duration-300 shadow-sm cursor-pointer bg-plant-600 hover:bg-plant-700 text-white border border-plant-500 hover:shadow-md">
+          <i data-lucide="activity" class="w-4 h-4"></i>
+          <span>Simulation: <strong id="sim-status-label" class="font-bold">ACTIVE (3s)</strong></span>
+        </button>
+
+        <!-- Preset Trigger Dropdown / Controls -->
+        <div class="flex items-center gap-1.5 bg-white border border-slate-200 shadow-sm rounded-xl p-1">
+          <span class="text-[10px] text-slate-400 uppercase font-bold px-2">Preset:</span>
+          <button onclick="setSimScenario('normal')" class="px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-slate-100 text-slate-600 hover:text-plant-700 transition" title="Optimal Growth Conditions">
+            Normal
+          </button>
+          <button onclick="setSimScenario('fungal_warning')" class="px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-amber-50 text-amber-700 hover:text-amber-800 transition" title="High Humidity &amp; Wet Foliage Risk">
+            Blight Risk
+          </button>
+          <button onclick="setSimScenario('critical_outbreak')" class="px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-rose-50 text-rose-700 hover:text-rose-800 transition" title="Extreme Disease Incubation">
+            Severe
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+
+    <!-- ========================================== -->
+    <!-- 2. REAL-TIME TELEMETRY CARDS (4 CARDS)    -->
+    <!-- ========================================== -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+      
+      <!-- Card 1: Air Temperature -->
+      <div class="white-card rounded-2xl p-5 border border-slate-200/90 shadow-botanical relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] hover:shadow-card-hover group">
+        <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-amber-100/70 rounded-full blur-xl group-hover:bg-amber-200/60 transition-all"></div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200 shadow-sm">
+              <i data-lucide="thermometer" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Air Temperature</div>
+              <div class="text-[11px] text-slate-500 font-medium">Canopy sensor DHT11</div>
+            </div>
+          </div>
+          <span id="temp-badge" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+            Optimal
+          </span>
+        </div>
+
+        <div class="mt-4 flex items-baseline justify-between">
+          <div class="flex items-baseline gap-1">
+            <span id="val-temperature" class="text-4xl font-extrabold font-mono text-slate-900 tracking-tight">24.2</span>
+            <span class="text-xl font-bold text-slate-400">°C</span>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] font-medium text-slate-500">Threshold: <span class="font-bold text-slate-700">18 - 28°C</span></div>
+            <div id="temp-trend" class="text-xs font-semibold text-emerald-600 flex items-center justify-end gap-1 mt-0.5">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> +0.3°C/hr
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="mt-4">
+          <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+            <div id="temp-bar" class="h-full bg-gradient-to-r from-amber-400 to-rose-500 rounded-full transition-all duration-700" style="width: 55%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-400 font-mono font-medium mt-1">
+            <span>0°C</span>
+            <span class="text-slate-600 font-semibold">25°C (Ideal)</span>
+            <span>50°C</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Air Humidity -->
+      <div class="white-card rounded-2xl p-5 border border-slate-200/90 shadow-botanical relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] hover:shadow-card-hover group">
+        <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-blue-100/70 rounded-full blur-xl group-hover:bg-blue-200/60 transition-all"></div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200 shadow-sm">
+              <i data-lucide="droplets" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Air Humidity</div>
+              <div class="text-[11px] text-slate-500 font-medium">Relative Humidity RH</div>
+            </div>
+          </div>
+          <span id="humidity-badge" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+            Elevated
+          </span>
+        </div>
+
+        <div class="mt-4 flex items-baseline justify-between">
+          <div class="flex items-baseline gap-1">
+            <span id="val-humidity" class="text-4xl font-extrabold font-mono text-slate-900 tracking-tight">82.4</span>
+            <span class="text-xl font-bold text-slate-400">%</span>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] font-medium text-slate-500">Fungal trigger: <span class="font-bold text-amber-600">&gt; 80%</span></div>
+            <div id="humidity-trend" class="text-xs font-semibold text-amber-600 flex items-center justify-end gap-1 mt-0.5">
+              <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Spore Alert
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="mt-4">
+          <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+            <div id="humidity-bar" class="h-full bg-gradient-to-r from-blue-400 via-indigo-400 to-amber-500 rounded-full transition-all duration-700" style="width: 82%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-400 font-mono font-medium mt-1">
+            <span>20% (Dry)</span>
+            <span class="text-slate-600 font-semibold">60% (Optimal)</span>
+            <span>100% (Saturated)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Soil Moisture -->
+      <div class="white-card rounded-2xl p-5 border border-slate-200/90 shadow-botanical relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] hover:shadow-card-hover group">
+        <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-emerald-100/70 rounded-full blur-xl group-hover:bg-emerald-200/60 transition-all"></div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200 shadow-sm">
+              <i data-lucide="layers" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Soil Moisture</div>
+              <div class="text-[11px] text-slate-500 font-medium">Capacitive probe v1.2</div>
+            </div>
+          </div>
+          <span id="soil-badge" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-plant-50 text-plant-700 border border-plant-200">
+            Field Capacity
+          </span>
+        </div>
+
+        <div class="mt-4 flex items-baseline justify-between">
+          <div class="flex items-baseline gap-1">
+            <span id="val-soil" class="text-4xl font-extrabold font-mono text-slate-900 tracking-tight">64.0</span>
+            <span class="text-xl font-bold text-slate-400">%</span>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] font-medium text-slate-500">Root zone: <span class="font-bold text-slate-700">50 - 75%</span></div>
+            <div id="soil-trend" class="text-xs font-semibold text-emerald-600 flex items-center justify-end gap-1 mt-0.5">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i> Well Hydrated
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="mt-4">
+          <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+            <div id="soil-bar" class="h-full bg-gradient-to-r from-plant-500 to-teal-500 rounded-full transition-all duration-700" style="width: 64%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-400 font-mono font-medium mt-1">
+            <span>0% (Wilting)</span>
+            <span class="text-slate-600 font-semibold">65% (Healthy)</span>
+            <span>100% (Flooded)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Rain Intensity -->
+      <div class="white-card rounded-2xl p-5 border border-slate-200/90 shadow-botanical relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] hover:shadow-card-hover group">
+        <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-teal-100/70 rounded-full blur-xl group-hover:bg-teal-200/60 transition-all"></div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-200 shadow-sm">
+              <i data-lucide="cloud-rain" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Rain Intensity</div>
+              <div class="text-[11px] text-slate-500 font-medium">Rain sensor · GPIO 34</div>
+            </div>
+          </div>
+          <span id="leaf-badge" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200 animate-pulse">
+            Critical High
+          </span>
+        </div>
+
+        <div class="mt-4 flex items-baseline justify-between">
+          <div class="flex items-baseline gap-1">
+            <span id="val-leaf" class="text-4xl font-extrabold font-mono text-slate-900 tracking-tight">88.5</span>
+            <span class="text-xl font-bold text-slate-400">%</span>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] font-medium text-slate-500">Alert threshold: <span class="font-bold text-rose-600">&gt; 60%</span></div>
+            <div id="leaf-trend" class="text-xs font-semibold text-rose-600 flex items-center justify-end gap-1 mt-0.5">
+              <i data-lucide="alert-octagon" class="w-3.5 h-3.5"></i> Heavy Rain
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="mt-4">
+          <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+            <div id="leaf-bar" class="h-full bg-gradient-to-r from-teal-400 via-blue-400 to-indigo-500 rounded-full transition-all duration-700" style="width: 88%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-400 font-mono font-medium mt-1">
+            <span>0% (No Rain)</span>
+            <span class="text-slate-600 font-semibold">50% (Moderate)</span>
+            <span>100% (Flooding)</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- 3. DISEASE RISK ASSESSMENT PANEL           -->
+    <!-- ========================================== -->
+    <section class="white-card rounded-2xl p-5 sm:p-6 border border-emerald-100/90 shadow-botanical relative overflow-hidden">
+      <!-- Glow ambient accent -->
+      <div id="risk-glow-bg" class="absolute -top-32 -right-32 w-80 h-80 bg-rose-200/40 rounded-full blur-3xl transition-all duration-700 pointer-events-none"></div>
+
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between pb-4 border-b border-slate-200/80 gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-200 shadow-sm">
+            <i data-lucide="biohazard" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              Plant Disease Risk Assessment Engine
+              <span id="risk-state-pill" class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                HIGH RISK
+              </span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Epidemiological calculation based on leaf surface free moisture (&gt;70%), sustained relative humidity (&gt;80%), and temperature incubation range (18–28°C).
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-slate-500">Target Pathogen:</span>
+          <span class="text-xs font-mono font-bold px-3 py-1 rounded-lg bg-plant-50 border border-plant-200 text-plant-800">
+            Fungal Blight &amp; Downy Mildew
+          </span>
+        </div>
+      </div>
+
+      <!-- Main Risk Layout: Gauge + Prognosis + Agronomic Action -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 items-center">
+        
+        <!-- Risk Gauge & Meter (4 cols) -->
+        <div class="lg:col-span-4 flex flex-col items-center justify-center p-5 rounded-2xl bg-slate-50 border border-slate-200/80 relative">
+          <div class="relative w-48 h-48 flex items-center justify-center">
+            
+            <!-- SVG Circular Arc Meter -->
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+              <!-- Background Track -->
+              <circle cx="60" cy="60" r="48" stroke="currentColor" stroke-width="10" class="text-slate-200" fill="transparent" />
+              <!-- Progress Arc -->
+              <circle id="risk-gauge-circle" cx="60" cy="60" r="48" stroke="currentColor" stroke-width="10" 
+                class="text-rose-500 transition-all duration-700 ease-out" 
+                fill="transparent" 
+                stroke-dasharray="301.59" 
+                stroke-dashoffset="60" 
+                stroke-linecap="round" />
+            </svg>
+
+            <!-- Center Content -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span class="text-[11px] uppercase font-bold tracking-widest text-slate-400">Risk Score</span>
+              <div class="flex items-baseline">
+                <span id="risk-score-value" class="text-4xl font-extrabold font-mono text-rose-600">82</span>
+                <span class="text-base font-bold text-slate-400">/100</span>
+              </div>
+              <span id="risk-rating-text" class="text-xs font-extrabold uppercase tracking-wider text-rose-600 mt-0.5">Severe Blight</span>
+            </div>
+          </div>
+
+          <!-- Risk Band Legend -->
+          <div class="w-full grid grid-cols-3 gap-1.5 mt-4 text-center text-[10px] font-bold">
+            <div class="py-1 px-1.5 rounded-lg bg-plant-100 text-plant-800 border border-plant-200">
+              Low (0-40)
+            </div>
+            <div class="py-1 px-1.5 rounded-lg bg-amber-100 text-amber-800 border border-amber-200">
+              Mod (41-70)
+            </div>
+            <div class="py-1 px-1.5 rounded-lg bg-rose-100 text-rose-800 border border-rose-200">
+              High (71-100)
+            </div>
+          </div>
+        </div>
+
+        <!-- Pathogen Breakdown & Factors (4 cols) -->
+        <div class="lg:col-span-4 space-y-3.5">
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+            <span>Pathogen Infection Susceptibility</span>
+            <span class="text-[11px] font-semibold text-slate-400">Mills Period Index</span>
+          </div>
+
+          <!-- Factor 1: Fungal Late Blight (Phytophthora infestans) -->
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="flex justify-between items-center text-xs mb-1.5">
+              <span class="font-semibold text-slate-700">Fungal Late Blight (Phytophthora)</span>
+              <span id="risk-factor-blight" class="font-mono font-bold text-rose-600">88% (Critical)</span>
+            </div>
+            <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+              <div id="bar-factor-blight" class="h-full bg-rose-500 rounded-full transition-all duration-700" style="width: 88%"></div>
+            </div>
+            <div class="text-[11px] text-slate-500 font-medium mt-1">Triggered by rain/wetness &gt; 8h in 15–24°C</div>
+          </div>
+
+          <!-- Factor 2: Powdery & Downy Mildew -->
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="flex justify-between items-center text-xs mb-1.5">
+              <span class="font-semibold text-slate-700">Downy Mildew (Plasmopara)</span>
+              <span id="risk-factor-mildew" class="font-mono font-bold text-amber-700">74% (Elevated)</span>
+            </div>
+            <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+              <div id="bar-factor-mildew" class="h-full bg-amber-500 rounded-full transition-all duration-700" style="width: 74%"></div>
+            </div>
+            <div class="text-[11px] text-slate-500 font-medium mt-1">High air humidity &gt; 80% accelerates sporulation</div>
+          </div>
+
+          <!-- Factor 3: Botrytis Gray Mold -->
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="flex justify-between items-center text-xs mb-1.5">
+              <span class="font-semibold text-slate-700">Botrytis Gray Mold</span>
+              <span id="risk-factor-botrytis" class="font-mono font-bold text-amber-700">62% (Moderate)</span>
+            </div>
+            <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+              <div id="bar-factor-botrytis" class="h-full bg-amber-500 rounded-full transition-all duration-700" style="width: 62%"></div>
+            </div>
+            <div class="text-[11px] text-slate-500 font-medium mt-1">Prevalent in cool moist dense canopy pockets</div>
+          </div>
+        </div>
+
+        <!-- Agronomic Action & Recommendations Card (4 cols) -->
+        <div id="risk-action-box" class="lg:col-span-4 p-5 rounded-2xl bg-rose-50/70 border border-rose-200 flex flex-col justify-between h-full min-h-[220px] shadow-sm">
+          <div>
+            <div class="flex items-center gap-2 text-rose-700 mb-2">
+              <i data-lucide="alert-circle" class="w-5 h-5"></i>
+              <h3 id="risk-action-title" class="font-extrabold text-sm tracking-wide uppercase">Urgent Preventive Action Required</h3>
+            </div>
+            <p id="risk-action-desc" class="text-xs text-slate-600 leading-relaxed font-medium">
+              Extended wet foliage (88.5%) combined with high relative humidity (82.4%) creates optimal conditions for fungal zoospore germination within 4 to 6 hours.
+            </p>
+            
+            <div class="mt-4 space-y-2">
+              <div class="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-plant-600 shrink-0 mt-0.5"></i>
+                <span id="rec-1">Activate greenhouse cross-flow ventilation to accelerate leaf drying.</span>
+              </div>
+              <div class="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-plant-600 shrink-0 mt-0.5"></i>
+                <span id="rec-2">Delay overhead sprinkler irrigation cycles; switch to drip feed.</span>
+              </div>
+              <div class="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-plant-600 shrink-0 mt-0.5"></i>
+                <span id="rec-3">Prepare preventative bio-fungicide (Trichoderma or Copper spray).</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 pt-3 border-t border-rose-200 flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500">Auto-Alert System:</span>
+            <span class="text-xs font-bold text-rose-700 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+              SMS &amp; Telemetry Siren Armed
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- 4. TIME-SERIES CHARTS (2 DUAL-AXIS CHARTS) -->
+    <!-- ========================================== -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- Chart 1: Air Temperature & Humidity -->
+      <div class="white-card rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-botanical flex flex-col justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-2">
+          <div>
+            <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+              <i data-lucide="thermometer-snowflake" class="w-4 h-4 text-amber-500"></i>
+              Canopy Microclimate Dynamics
+            </h3>
+            <p class="text-xs text-slate-500 font-medium">Air Temperature (°C) vs Relative Humidity (%)</p>
+          </div>
+          <div class="flex items-center gap-3 text-xs font-mono font-bold">
+            <span class="flex items-center gap-1.5 text-amber-600">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Temp (°C)
+            </span>
+            <span class="flex items-center gap-1.5 text-blue-600">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Humidity (%)
+            </span>
+          </div>
+        </div>
+
+        <div class="relative h-64 sm:h-72 w-full mt-4">
+          <canvas id="tempHumidityChart"></canvas>
+        </div>
+
+        <div class="flex justify-between items-center text-[11px] text-slate-500 mt-3 pt-3 border-t border-slate-200/80 font-mono font-medium">
+          <span>Dual Axis Dynamic Tracking</span>
+          <span>Window: Last 20 Observations (Streaming)</span>
+        </div>
+      </div>
+
+      <!-- Chart 2: Soil Moisture & Rain Intensity -->
+      <div class="white-card rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-botanical flex flex-col justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-2">
+          <div>
+            <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+              <i data-lucide="droplet" class="w-4 h-4 text-teal-600"></i>
+              Hydrological &amp; Rain Monitoring
+            </h3>
+            <p class="text-xs text-slate-500 font-medium">Soil Moisture (%) vs Rain Intensity (%)</p>
+          </div>
+          <div class="flex items-center gap-3 text-xs font-mono font-bold">
+            <span class="flex items-center gap-1.5 text-plant-700">
+              <span class="w-2.5 h-2.5 rounded-full bg-plant-600"></span> Soil (%)
+            </span>
+            <span class="flex items-center gap-1.5 text-teal-700">
+              <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span> Rain (%)
+            </span>
+          </div>
+        </div>
+
+        <div class="relative h-64 sm:h-72 w-full mt-4">
+          <canvas id="soilLeafChart"></canvas>
+        </div>
+
+        <div class="flex justify-between items-center text-[11px] text-slate-500 mt-3 pt-3 border-t border-slate-200/80 font-mono font-medium">
+          <span>Critical Infection Indicator</span>
+          <span class="text-rose-600 font-semibold">Rain &gt;60% triggers disease alert</span>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- 5. AI PLANT LEAF DISEASE CLASSIFIER        -->
+    <!-- ========================================== -->
+    <section class="white-card rounded-2xl p-5 sm:p-6 border border-emerald-100/90 shadow-botanical relative overflow-hidden">
+      <!-- Glow ambient background -->
+      <div class="absolute -top-24 -right-24 w-72 h-72 bg-plant-200/40 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Section Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-plant-600 to-teal-500 text-white flex items-center justify-center shadow-md">
+            <i data-lucide="scan" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-base sm:text-lg text-slate-900">AI Plant Disease Vision Classifier</h3>
+              <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                Deep Learning Vision
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium">Upload or snap a high-resolution leaf photo for automated botanical pathology classification & agronomic guidance</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-emerald-600"></i>
+          <span>PlantVillage Dataset Trained</span>
+        </div>
+      </div>
+
+      <!-- Main Layout: Upload Left, Results Right -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-5">
+        
+        <!-- Left: Upload & Preview Card (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col gap-4">
+          <div id="drop-zone" onclick="document.getElementById('leaf-image-input').click()" 
+            class="border-2 border-dashed border-plant-300 hover:border-plant-500 bg-plant-50/40 hover:bg-plant-50/70 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition group min-h-[260px] relative">
+            <input type="file" id="leaf-image-input" accept="image/*" class="hidden" onchange="handleImageSelection(event)">
+            
+            <div id="upload-prompt" class="flex flex-col items-center">
+              <div class="w-14 h-14 rounded-2xl bg-white shadow-sm border border-plant-200 flex items-center justify-center text-plant-600 group-hover:scale-105 transition mb-3">
+                <i data-lucide="upload-cloud" class="w-7 h-7"></i>
+              </div>
+              <h4 class="font-bold text-sm text-slate-800 mb-1">Upload Plant Leaf Photo</h4>
+              <p class="text-xs text-slate-500 max-w-xs mb-3">Drag & drop your leaf image here, or click to browse (PNG, JPG, WEBP up to 10MB)</p>
+              <span class="px-3.5 py-1.5 rounded-xl bg-plant-600 text-white font-semibold text-xs shadow-sm group-hover:bg-plant-700 transition">
+                Select Photo
+              </span>
+            </div>
+
+            <!-- Preview Box (hidden initially) -->
+            <div id="image-preview-container" class="hidden w-full h-full flex flex-col items-center">
+              <img id="image-preview" src="#" alt="Leaf Preview" class="max-h-56 max-w-full rounded-xl object-contain shadow-sm border border-slate-200">
+              <p id="image-filename" class="text-xs font-mono text-slate-600 mt-2 truncate max-w-xs"></p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button id="classify-btn" onclick="submitLeafImageForAnalysis()" disabled
+              class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs text-white bg-slate-300 cursor-not-allowed transition shadow-sm">
+              <i data-lucide="microscope" class="w-4 h-4"></i>
+              <span id="classify-btn-text">Analyze Leaf Health</span>
+            </button>
+            <button onclick="resetImageClassifier()" class="px-3 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-600 text-xs font-semibold transition" title="Clear">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Diagnostic Results (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col justify-between">
+          <div id="prediction-placeholder" class="h-full flex flex-col items-center justify-center p-8 rounded-2xl border border-slate-200/80 bg-slate-50/50 text-center text-slate-400 min-h-[260px]">
+            <i data-lucide="leaf" class="w-12 h-12 text-slate-300 mb-2"></i>
+            <h4 class="font-bold text-sm text-slate-700">Awaiting Leaf Inspection</h4>
+            <p class="text-xs text-slate-500 max-w-md mt-1">Upload a leaf photo to view real-time pathogen identification, lesion morphology, and targeted agronomic remedies.</p>
+          </div>
+
+          <div id="prediction-results" class="hidden flex flex-col gap-4">
+            <!-- Header Banner -->
+            <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <span id="res-health-pill" class="px-2.5 py-0.5 text-[11px] font-extrabold uppercase rounded-full"></span>
+                <h4 id="res-disease-name" class="text-lg font-extrabold text-slate-900 mt-1"></h4>
+              </div>
+              <div class="text-left sm:text-right">
+                <span class="text-[10px] uppercase font-bold text-slate-400 block">Vision Confidence</span>
+                <span id="res-confidence-text" class="text-xl font-extrabold font-mono text-plant-700"></span>
+              </div>
+            </div>
+
+            <!-- Confidence Progress Bar -->
+            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
+              <div id="res-confidence-bar" class="bg-gradient-to-r from-plant-500 to-teal-500 h-2 rounded-full transition-all duration-700" style="width: 0%"></div>
+            </div>
+
+            <!-- Environmental Telemetry Cross-Correlation -->
+            <div id="res-env-box" class="p-3.5 rounded-xl bg-teal-50/80 border border-teal-200 text-xs text-teal-900 flex items-start gap-2.5">
+              <i data-lucide="activity" class="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0"></i>
+              <span id="res-env-text" class="font-medium"></span>
+            </div>
+
+            <!-- Symptoms & Recommendations Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col">
+                <span class="font-bold text-slate-900 flex items-center gap-1.5 mb-1.5 text-xs">
+                  <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-amber-600"></i> Visible Symptoms
+                </span>
+                <ul id="res-symptoms-list" class="space-y-1 text-slate-600 list-disc list-inside"></ul>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-plant-50/60 border border-plant-200 flex flex-col">
+                <span class="font-bold text-slate-900 flex items-center gap-1.5 mb-1.5 text-xs">
+                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-plant-600"></i> Agronomic Action
+                </span>
+                <ul id="res-treatment-list" class="space-y-1 text-slate-700 list-disc list-inside"></ul>
+              </div>
+            </div>
+
+            <div class="text-[10px] text-slate-400 italic">
+              * Note: Automated botanical vision estimation. Verify with macroscopic inspection and laboratory assays before applying regulated chemical fungicides.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- 6. TELEMETRY LOG TABLE                     -->
+    <!-- ========================================== -->
+    <section class="white-card rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-botanical">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-plant-50 text-plant-700 flex items-center justify-center border border-plant-200 shadow-sm">
+            <i data-lucide="table-properties" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-900">Live Telemetry Event Log</h3>
+            <p class="text-xs text-slate-500 font-medium">Real-time incoming ESP32 packets, sensor metrics, and disease status classifications</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <button onclick="downloadCSV()" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-700 shadow-sm transition">
+            <i data-lucide="download" class="w-3.5 h-3.5 text-slate-500"></i>
+            <span>Export CSV</span>
+          </button>
+          <button onclick="clearLogTable()" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-700 shadow-sm transition">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5 text-slate-500"></i>
+            <span>Clear</span>
+          </button>
+          <span class="text-xs font-mono font-bold text-plant-800 bg-plant-100 px-3 py-1 rounded-lg border border-plant-200">
+            <span id="log-count">0</span> entries
+          </span>
+        </div>
+      </div>
+
+      <!-- Scrollable Table -->
+      <div class="overflow-x-auto mt-4 max-h-80 overflow-y-auto rounded-xl border border-slate-200">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-slate-600 font-mono font-bold uppercase text-[10px] tracking-wider sticky top-0 z-10 border-b border-slate-200">
+            <tr>
+              <th scope="col" class="py-3 px-4">Timestamp</th>
+              <th scope="col" class="py-3 px-4">Source</th>
+              <th scope="col" class="py-3 px-4">Air Temp (°C)</th>
+              <th scope="col" class="py-3 px-4">Humidity (%)</th>
+              <th scope="col" class="py-3 px-4">Soil Moisture (%)</th>
+              <th scope="col" class="py-3 px-4">Rain Intensity (%)</th>
+              <th scope="col" class="py-3 px-4">Disease Risk Index</th>
+              <th scope="col" class="py-3 px-4">Threat Diagnosis</th>
+              <th scope="col" class="py-3 px-4 text-right">System Action</th>
+            </tr>
+          </thead>
+          <tbody id="telemetry-table-body" class="divide-y divide-slate-100 font-mono text-slate-700 bg-white">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="pt-4 pb-2 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-slate-200">
+      <div class="font-medium">FloraGuard IoT &bull; Botanical Microclimate &amp; Disease Early Warning Platform</div>
+      <div class="flex items-center gap-4 font-semibold">
+        <span class="flex items-center gap-1.5 text-teal-700">
+          <i data-lucide="cpu" class="w-3.5 h-3.5 text-teal-600"></i> ESP32 FreeRTOS
+        </span>
+        <span class="flex items-center gap-1.5 text-plant-700">
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i> FastAPI Backend
+        </span>
+        <span class="flex items-center gap-1.5 text-slate-700">
+          <i data-lucide="line-chart" class="w-3.5 h-3.5 text-plant-600"></i> Chart.js v4
+        </span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT LOGIC & SIMULATION ENGINE       -->
+  <!-- ========================================== -->
+  <script>
+    // System State
+    const state = {
+      simulationMode: true,
+      simInterval: null,
+      backendConnected: false,
+      scenario: 'fungal_warning', // 'normal', 'fungal_warning', 'critical_outbreak'
+      historyLength: 20,
+      logs: [],
+      current: {
+        temp: 24.2,
+        humidity: 82.4,
+        soil: 64.0,
+        leafWetness: 88.5,
+        riskScore: 82,
+        riskLevel: 'HIGH',
+        diagnosis: 'Late Blight Risk',
+        timestamp: new Date().toLocaleTimeString()
+      }
+    };
+
+    // Chart.js Instances
+    let tempHumidityChart = null;
+    let soilLeafChart = null;
+
+    // Helper: Initialize Chart.js with clean, bright botanical styling
+    function initCharts() {
+      const gridColor = 'rgba(226, 232, 240, 0.7)';
+      const textColor = '#64748b';
+
+      // 1. Temperature & Humidity Chart
+      const ctx1 = document.getElementById('tempHumidityChart').getContext('2d');
+      const tempGradient = ctx1.createLinearGradient(0, 0, 0, 300);
+      tempGradient.addColorStop(0, 'rgba(245, 158, 11, 0.22)');
+      tempGradient.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
+
+      const humGradient = ctx1.createLinearGradient(0, 0, 0, 300);
+      humGradient.addColorStop(0, 'rgba(59, 130, 246, 0.22)');
+      humGradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+      tempHumidityChart = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Air Temp (°C)',
+              data: [],
+              borderColor: '#f59e0b',
+              backgroundColor: tempGradient,
+              borderWidth: 2.5,
+              tension: 0.4,
+              fill: true,
+              yAxisID: 'yTemp',
+              pointRadius: 2.5,
+              pointHoverRadius: 6,
+            },
+            {
+              label: 'Humidity (%)',
+              data: [],
+              borderColor: '#3b82f6',
+              backgroundColor: humGradient,
+              borderWidth: 2.5,
+              tension: 0.4,
+              fill: true,
+              yAxisID: 'yHum',
+              pointRadius: 2.5,
+              pointHoverRadius: 6,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              titleColor: '#0f172a',
+              bodyColor: '#334155',
+              borderColor: 'rgba(203, 213, 225, 0.8)',
+              borderWidth: 1,
+              padding: 10,
+              displayColors: true,
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: gridColor },
+              ticks: { color: textColor, font: { family: 'JetBrains Mono', size: 10 } }
+            },
+            yTemp: {
+              type: 'linear',
+              position: 'left',
+              min: 10,
+              max: 45,
+              grid: { color: gridColor },
+              ticks: { color: '#d97706', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' }, callback: v => v + '°C' }
+            },
+            yHum: {
+              type: 'linear',
+              position: 'right',
+              min: 20,
+              max: 100,
+              grid: { drawOnChartArea: false },
+              ticks: { color: '#2563eb', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' }, callback: v => v + '%' }
+            }
+          }
+        }
+      });
+
+      // 2. Soil Moisture & Leaf Wetness Chart
+      const ctx2 = document.getElementById('soilLeafChart').getContext('2d');
+      const soilGradient = ctx2.createLinearGradient(0, 0, 0, 300);
+      soilGradient.addColorStop(0, 'rgba(22, 163, 74, 0.22)');
+      soilGradient.addColorStop(1, 'rgba(22, 163, 74, 0.0)');
+
+      const leafGradient = ctx2.createLinearGradient(0, 0, 0, 300);
+      leafGradient.addColorStop(0, 'rgba(13, 148, 136, 0.22)');
+      leafGradient.addColorStop(1, 'rgba(13, 148, 136, 0.0)');
+
+      soilLeafChart = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Soil Moisture (%)',
+              data: [],
+              borderColor: '#16a34a',
+              backgroundColor: soilGradient,
+              borderWidth: 2.5,
+              tension: 0.4,
+              fill: true,
+              yAxisID: 'ySoil',
+              pointRadius: 2.5,
+              pointHoverRadius: 6,
+            },
+            {
+              label: 'Rain Intensity (%)',
+              data: [],
+              borderColor: '#0d9488',
+              backgroundColor: leafGradient,
+              borderWidth: 2.5,
+              tension: 0.4,
+              fill: true,
+              yAxisID: 'yLeaf',
+              pointRadius: 2.5,
+              pointHoverRadius: 6,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              titleColor: '#0f172a',
+              bodyColor: '#334155',
+              borderColor: 'rgba(203, 213, 225, 0.8)',
+              borderWidth: 1,
+              padding: 10,
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: gridColor },
+              ticks: { color: textColor, font: { family: 'JetBrains Mono', size: 10 } }
+            },
+            ySoil: {
+              type: 'linear',
+              position: 'left',
+              min: 0,
+              max: 100,
+              grid: { color: gridColor },
+              ticks: { color: '#16a34a', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' }, callback: v => v + '%' }
+            },
+            yLeaf: {
+              type: 'linear',
+              position: 'right',
+              min: 0,
+              max: 100,
+              grid: { drawOnChartArea: false },
+              ticks: { color: '#0d9488', font: { family: 'JetBrains Mono', size: 10, weight: 'bold' }, callback: v => v + '%' }
+            }
+          }
+        }
+      });
+    }
+
+    // Disease Risk Calculation Engine
+    function calculateDiseaseRisk(temp, humidity, leafWetness) {
+      let score = 0;
+
+      // 1. Leaf wetness contribution (0 to 45 pts)
+      if (leafWetness >= 70) {
+        score += 30 + ((leafWetness - 70) / 30) * 15;
+      } else if (leafWetness >= 40) {
+        score += 15 + ((leafWetness - 40) / 30) * 15;
+      } else {
+        score += (leafWetness / 40) * 15;
+      }
+
+      // 2. Humidity contribution (0 to 35 pts)
+      if (humidity >= 80) {
+        score += 25 + ((humidity - 80) / 20) * 10;
+      } else if (humidity >= 60) {
+        score += 10 + ((humidity - 60) / 20) * 15;
+      } else {
+        score += (humidity / 60) * 10;
+      }
+
+      // 3. Temperature suitability multiplier (0 to 20 pts)
+      if (temp >= 18 && temp <= 27) {
+        score += 20; // Prime incubation range
+      } else if (temp >= 14 && temp <= 32) {
+        score += 10;
+      } else {
+        score += 3;
+      }
+
+      score = Math.min(100, Math.round(score));
+
+      // Determine level and diagnosis
+      let level = 'LOW';
+      let diagnosis = 'No Pathogen Threat';
+      let actionTitle = 'Conditions Optimal';
+      let actionDesc = 'Canopy and foliage are within safe microclimate thresholds. Normal photosynthesis and transpiration.';
+      let rec1 = 'Maintain standard automated irrigation schedule.';
+      let rec2 = 'Routine greenhouse air circulation active.';
+      let rec3 = 'No fungicide or chemical intervention needed.';
+
+      if (score >= 71) {
+        level = 'HIGH';
+        diagnosis = 'Severe Fungal Blight Risk';
+        actionTitle = 'Critical Disease Alert';
+        actionDesc = `Extended wet foliage (${leafWetness}%) and ambient humidity (${humidity}%) create prime conditions for fungal zoospore germination.`;
+        rec1 = 'Ventilate canopy immediately to decrease surface moisture.';
+        rec2 = 'Cease overhead sprinkling; switch to targeted sub-surface drip.';
+        rec3 = 'Prepare preventative bio-fungicide (Copper/Trichoderma) within 6h.';
+      } else if (score >= 41) {
+        level = 'MODERATE';
+        diagnosis = 'Mildew Warning';
+        actionTitle = 'Elevated Spore Risk';
+        actionDesc = `Humidity (${humidity}%) is rising above safe baseline. Foliar moisture permits fungal spores to attach.`;
+        rec1 = 'Increase exhaust fan speed by 25% to lower RH.';
+        rec2 = 'Monitor foliage closely over the next 3 hours.';
+        rec3 = 'Verify drip irrigation line pressure and soil drainage.';
+      }
+
+      return {
+        score,
+        level,
+        diagnosis,
+        actionTitle,
+        actionDesc,
+        rec1,
+        rec2,
+        rec3,
+        blightFactor: Math.min(100, Math.round(score * 1.05)),
+        mildewFactor: Math.min(100, Math.round(humidity * 0.9)),
+        botrytisFactor: Math.min(100, Math.round((leafWetness * 0.4) + (humidity * 0.35)))
+      };
+    }
+
+    // Update Dashboard UI with new telemetry point
+    function updateDashboard(data) {
+      state.current = data;
+      const risk = calculateDiseaseRisk(data.temp, data.humidity, data.leafWetness);
+      data.risk = risk;
+
+      // Update Card 1: Air Temp
+      document.getElementById('val-temperature').textContent = data.temp.toFixed(1);
+      const tempBar = document.getElementById('temp-bar');
+      tempBar.style.width = Math.min(100, Math.max(5, (data.temp / 50) * 100)) + '%';
+      const tempBadge = document.getElementById('temp-badge');
+      if (data.temp > 30) {
+        tempBadge.textContent = 'High Heat';
+        tempBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200';
+      } else if (data.temp < 15) {
+        tempBadge.textContent = 'Cold Stress';
+        tempBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200';
+      } else {
+        tempBadge.textContent = 'Optimal';
+        tempBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+      }
+
+      // Update Card 2: Air Humidity
+      document.getElementById('val-humidity').textContent = data.humidity.toFixed(1);
+      document.getElementById('humidity-bar').style.width = Math.min(100, data.humidity) + '%';
+      const humBadge = document.getElementById('humidity-badge');
+      if (data.humidity > 80) {
+        humBadge.textContent = 'Saturated (Alert)';
+        humBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200';
+      } else if (data.humidity > 65) {
+        humBadge.textContent = 'Elevated';
+        humBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200';
+      } else {
+        humBadge.textContent = 'Normal';
+        humBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+      }
+
+      // Update Card 3: Soil Moisture
+      document.getElementById('val-soil').textContent = data.soil.toFixed(1);
+      document.getElementById('soil-bar').style.width = Math.min(100, data.soil) + '%';
+      const soilBadge = document.getElementById('soil-badge');
+      if (data.soil < 35) {
+        soilBadge.textContent = 'Dry (Irrigate)';
+        soilBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200';
+      } else if (data.soil > 85) {
+        soilBadge.textContent = 'Over-Saturated';
+        soilBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200';
+      } else {
+        soilBadge.textContent = 'Field Capacity';
+        soilBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-plant-50 text-plant-700 border border-plant-200';
+      }
+
+      // Update Card 4: Rain Intensity
+      document.getElementById('val-leaf').textContent = data.leafWetness.toFixed(1);
+      document.getElementById('leaf-bar').style.width = Math.min(100, data.leafWetness) + '%';
+      const leafBadge = document.getElementById('leaf-badge');
+      if (data.leafWetness >= 70) {
+        leafBadge.textContent = 'Heavy Rain';
+        leafBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200 animate-pulse';
+      } else if (data.leafWetness >= 35) {
+        leafBadge.textContent = 'Moderate Rain';
+        leafBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200';
+      } else if (data.leafWetness >= 10) {
+        leafBadge.textContent = 'Light Drizzle';
+        leafBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200';
+      } else {
+        leafBadge.textContent = 'No Rain';
+        leafBadge.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-plant-50 text-plant-700 border border-plant-200';
+      }
+
+      // Update Risk Assessment Panel
+      const scoreVal = document.getElementById('risk-score-value');
+      scoreVal.textContent = risk.score;
+      const ratingText = document.getElementById('risk-rating-text');
+      ratingText.textContent = risk.diagnosis;
+
+      const statePill = document.getElementById('risk-state-pill');
+      statePill.textContent = `${risk.level} RISK`;
+
+      // Update Arc SVG Circle
+      const circle = document.getElementById('risk-gauge-circle');
+      const circumference = 2 * Math.PI * 48; // ~301.59
+      const offset = circumference - (risk.score / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
+
+      // Color coding based on risk level
+      const glowBg = document.getElementById('risk-glow-bg');
+      const actionBox = document.getElementById('risk-action-box');
+      if (risk.level === 'HIGH') {
+        circle.setAttribute('class', 'text-rose-500 transition-all duration-700 ease-out');
+        scoreVal.className = 'text-4xl font-extrabold font-mono text-rose-600';
+        ratingText.className = 'text-xs font-extrabold uppercase tracking-wider text-rose-600 mt-0.5';
+        statePill.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-100 text-rose-800 border border-rose-200 shadow-sm';
+        glowBg.className = 'absolute -top-32 -right-32 w-80 h-80 bg-rose-200/50 rounded-full blur-3xl transition-all duration-700 pointer-events-none';
+        actionBox.className = 'lg:col-span-4 p-5 rounded-2xl bg-rose-50/80 border border-rose-200 flex flex-col justify-between h-full min-h-[220px] shadow-sm';
+      } else if (risk.level === 'MODERATE') {
+        circle.setAttribute('class', 'text-amber-500 transition-all duration-700 ease-out');
+        scoreVal.className = 'text-4xl font-extrabold font-mono text-amber-600';
+        ratingText.className = 'text-xs font-extrabold uppercase tracking-wider text-amber-600 mt-0.5';
+        statePill.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200 shadow-sm';
+        glowBg.className = 'absolute -top-32 -right-32 w-80 h-80 bg-amber-200/50 rounded-full blur-3xl transition-all duration-700 pointer-events-none';
+        actionBox.className = 'lg:col-span-4 p-5 rounded-2xl bg-amber-50/80 border border-amber-200 flex flex-col justify-between h-full min-h-[220px] shadow-sm';
+      } else {
+        circle.setAttribute('class', 'text-emerald-500 transition-all duration-700 ease-out');
+        scoreVal.className = 'text-4xl font-extrabold font-mono text-plant-700';
+        ratingText.className = 'text-xs font-extrabold uppercase tracking-wider text-plant-700 mt-0.5';
+        statePill.className = 'px-2.5 py-0.5 text-xs font-bold rounded-full bg-plant-100 text-plant-800 border border-plant-200 shadow-sm';
+        glowBg.className = 'absolute -top-32 -right-32 w-80 h-80 bg-emerald-200/40 rounded-full blur-3xl transition-all duration-700 pointer-events-none';
+        actionBox.className = 'lg:col-span-4 p-5 rounded-2xl bg-plant-50/80 border border-plant-200 flex flex-col justify-between h-full min-h-[220px] shadow-sm';
+      }
+
+      // Factor bars
+      document.getElementById('risk-factor-blight').textContent = `${risk.blightFactor}%`;
+      document.getElementById('bar-factor-blight').style.width = `${risk.blightFactor}%`;
+      document.getElementById('risk-factor-mildew').textContent = `${risk.mildewFactor}%`;
+      document.getElementById('bar-factor-mildew').style.width = `${risk.mildewFactor}%`;
+      document.getElementById('risk-factor-botrytis').textContent = `${risk.botrytisFactor}%`;
+      document.getElementById('bar-factor-botrytis').style.width = `${risk.botrytisFactor}%`;
+
+      // Recommendations
+      document.getElementById('risk-action-title').textContent = risk.actionTitle;
+      document.getElementById('risk-action-desc').textContent = risk.actionDesc;
+      document.getElementById('rec-1').textContent = risk.rec1;
+      document.getElementById('rec-2').textContent = risk.rec2;
+      document.getElementById('rec-3').textContent = risk.rec3;
+
+      // Update Charts
+      if (tempHumidityChart && soilLeafChart) {
+        const timeLabel = data.time || new Date().toLocaleTimeString();
+
+        // Chart 1
+        tempHumidityChart.data.labels.push(timeLabel);
+        tempHumidityChart.data.datasets[0].data.push(data.temp);
+        tempHumidityChart.data.datasets[1].data.push(data.humidity);
+        if (tempHumidityChart.data.labels.length > state.historyLength) {
+          tempHumidityChart.data.labels.shift();
+          tempHumidityChart.data.datasets[0].data.shift();
+          tempHumidityChart.data.datasets[1].data.shift();
+        }
+        tempHumidityChart.update('none');
+
+        // Chart 2
+        soilLeafChart.data.labels.push(timeLabel);
+        soilLeafChart.data.datasets[0].data.push(data.soil);
+        soilLeafChart.data.datasets[1].data.push(data.leafWetness);
+        if (soilLeafChart.data.labels.length > state.historyLength) {
+          soilLeafChart.data.labels.shift();
+          soilLeafChart.data.datasets[0].data.shift();
+          soilLeafChart.data.datasets[1].data.shift();
+        }
+        soilLeafChart.update('none');
+      }
+
+      // Add to Log Table
+      addLogRow(data);
+
+      // Update Last Updated Timestamp
+      document.getElementById('last-updated-time').textContent = new Date().toLocaleTimeString();
+    }
+
+    // Append entry to Telemetry Log Table
+    function addLogRow(data) {
+      const tbody = document.getElementById('telemetry-table-body');
+      const timeStr = data.time || new Date().toLocaleTimeString();
+      const risk = data.risk;
+      const src = data.source || (state.isLiveHardware ? 'HARDWARE' : 'SIMULATION');
+
+      state.logs.unshift({
+        timestamp: timeStr,
+        source: src,
+        temp: data.temp,
+        humidity: data.humidity,
+        soil: data.soil,
+        leafWetness: data.leafWetness,
+        riskScore: risk.score,
+        diagnosis: risk.diagnosis,
+        level: risk.level,
+        action: risk.level === 'HIGH' ? 'Ventilation + Alert' : (risk.level === 'MODERATE' ? 'Fan Speed +25%' : 'Standard Cycle')
+      });
+
+      // Keep max 50 in memory
+      if (state.logs.length > 50) state.logs.pop();
+
+      document.getElementById('log-count').textContent = state.logs.length;
+
+      let badgeClass = 'bg-plant-100 text-plant-800 border-plant-200';
+      if (risk.level === 'HIGH') badgeClass = 'bg-rose-100 text-rose-800 border-rose-200';
+      else if (risk.level === 'MODERATE') badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+
+      const srcBadgeClass = (src === 'HARDWARE') 
+        ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+        : 'bg-slate-100 text-slate-600 border-slate-200';
+
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-plant-50/50 transition border-b border-slate-100';
+      tr.innerHTML = `
+        <td class="py-2.5 px-4 text-slate-600 font-mono font-medium">${timeStr}</td>
+        <td class="py-2.5 px-4">
+          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${srcBadgeClass}">
+            ${src}
+          </span>
+        </td>
+        <td class="py-2.5 px-4 font-bold text-amber-600">${data.temp.toFixed(1)}</td>
+        <td class="py-2.5 px-4 font-bold text-blue-600">${data.humidity.toFixed(1)}</td>
+        <td class="py-2.5 px-4 font-bold text-plant-700">${data.soil.toFixed(1)}</td>
+        <td class="py-2.5 px-4 font-bold text-teal-700">${data.leafWetness.toFixed(1)}</td>
+        <td class="py-2.5 px-4">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${badgeClass}">
+            ${risk.score}/100 (${risk.level})
+          </span>
+        </td>
+        <td class="py-2.5 px-4 font-semibold text-slate-800">${risk.diagnosis}</td>
+        <td class="py-2.5 px-4 text-right font-medium text-slate-600 text-[11px]">${risk.level === 'HIGH' ? 'Ventilate + Alert' : (risk.level === 'MODERATE' ? 'Fan Boost' : 'Normal')}</td>
+      `;
+
+      tbody.insertBefore(tr, tbody.firstChild);
+
+      // Trim table DOM rows
+      while (tbody.children.length > 30) {
+        tbody.removeChild(tbody.lastChild);
+      }
+    }
+
+    function clearLogTable() {
+      state.logs = [];
+      document.getElementById('telemetry-table-body').innerHTML = '';
+      document.getElementById('log-count').textContent = '0';
+    }
+
+    function downloadCSV() {
+      if (state.logs.length === 0) {
+        alert('No telemetry records to export yet.');
+        return;
+      }
+      let csv = 'Timestamp,Source,AirTemp_C,Humidity_Pct,SoilMoisture_Pct,RainIntensity_Pct,RiskScore,Diagnosis,RiskLevel,SystemAction\n';
+      state.logs.forEach(r => {
+        csv += `"${r.timestamp}","${r.source}",${r.temp},${r.humidity},${r.soil},${r.leafWetness},${r.riskScore},"${r.diagnosis}","${r.level}","${r.action}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `FloraGuard_Telemetry_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Realistic Microclimate Generator for Simulation Mode
+    function generateSimulatedReading() {
+      let baseTemp = 23.5;
+      let baseHum = 75.0;
+      let baseSoil = 62.0;
+      let baseLeaf = 65.0;
+
+      if (state.scenario === 'normal') {
+        baseTemp = 24.0 + (Math.random() * 2 - 1);
+        baseHum = 58.0 + (Math.random() * 6 - 3);
+        baseSoil = 65.0 + (Math.random() * 4 - 2);
+        baseLeaf = 18.0 + (Math.random() * 10 - 5);
+      } else if (state.scenario === 'fungal_warning') {
+        baseTemp = 22.8 + (Math.random() * 2.5 - 1.2);
+        baseHum = 83.5 + (Math.random() * 4 - 2);
+        baseSoil = 68.0 + (Math.random() * 4 - 2);
+        baseLeaf = 86.0 + (Math.random() * 8 - 4);
+      } else if (state.scenario === 'critical_outbreak') {
+        baseTemp = 24.2 + (Math.random() * 1.5 - 0.7);
+        baseHum = 92.0 + (Math.random() * 4 - 2);
+        baseSoil = 82.0 + (Math.random() * 5 - 2);
+        baseLeaf = 95.0 + (Math.random() * 4 - 2);
+      }
+
+      return {
+        temp: Math.max(12, Math.min(45, baseTemp)),
+        humidity: Math.max(10, Math.min(100, baseHum)),
+        soil: Math.max(5, Math.min(100, baseSoil)),
+        leafWetness: Math.max(0, Math.min(100, baseLeaf)),
+        time: new Date().toLocaleTimeString(),
+        source: 'SIMULATION'
+      };
+    }
+
+    function runSimulationStep() {
+      if (state.isLiveHardware) return; // Never overwrite real hardware
+      const data = generateSimulatedReading();
+      updateDashboard(data);
+    }
+
+    function startSimulation() {
+      if (state.simInterval) clearInterval(state.simInterval);
+      state.simInterval = setInterval(runSimulationStep, 3000);
+      state.simulationMode = true;
+      updateSimulationUI();
+    }
+
+    function stopSimulation() {
+      if (state.simInterval) {
+        clearInterval(state.simInterval);
+        state.simInterval = null;
+      }
+      state.simulationMode = false;
+      updateSimulationUI();
+    }
+
+    async function toggleSimulationMode() {
+      const targetMode = state.simulationMode ? 'HARDWARE' : 'SIMULATION';
+      try {
+        await fetch('http://127.0.0.1:8000/api/mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: targetMode })
+        });
+      } catch (e) {
+        console.warn('Mode toggle fetch note:', e);
+      }
+
+      if (state.simulationMode) {
+        stopSimulation();
+      } else {
+        state.isLiveHardware = false;
+        updateSourceBadge(false);
+        startSimulation();
+      }
+    }
+
+    function updateSimulationUI() {
+      const label = document.getElementById('sim-status-label');
+      const btn = document.getElementById('sim-toggle-btn');
+      const espText = document.getElementById('esp32-status-text');
+
+      if (state.simulationMode) {
+        label.textContent = 'ACTIVE (3s)';
+        btn.className = 'flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-xs transition-all duration-300 shadow-sm cursor-pointer bg-plant-600 hover:bg-plant-700 text-white border border-plant-500 hover:shadow-md';
+        if (!state.isLiveHardware) {
+          espText.textContent = 'SIMULATING (3s)';
+        }
+      } else {
+        label.textContent = 'PAUSED';
+        btn.className = 'flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-xs transition-all duration-300 shadow-sm cursor-pointer bg-white hover:bg-slate-50 text-slate-700 border border-slate-300';
+        if (!state.isLiveHardware) {
+          espText.textContent = state.backendConnected ? 'ESP32 Standby' : 'STANDBY';
+        }
+      }
+    }
+
+    function updateSourceBadge(isHardware) {
+      const badge = document.getElementById('telemetry-source-badge');
+      if (!badge) return;
+      if (isHardware) {
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> LIVE HARDWARE DATA';
+        badge.className = 'px-3 py-1.5 text-xs font-bold rounded-xl border bg-emerald-100 text-emerald-800 border-emerald-300 shadow-sm flex items-center gap-1.5';
+      } else {
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500"></span> SIMULATED DATA';
+        badge.className = 'px-3 py-1.5 text-xs font-bold rounded-xl border bg-amber-50 text-amber-800 border-amber-200 shadow-sm flex items-center gap-1.5';
+      }
+    }
+
+    function setSimScenario(scen) {
+      state.scenario = scen;
+      state.isLiveHardware = false;
+      updateSourceBadge(false);
+      runSimulationStep();
+    }
+
+    // ==========================================
+    // Backend API & WebSocket Live Telemetry
+    // ==========================================
+    let telemetryWs = null;
+
+    function connectTelemetryWebSocket() {
+      const wsUrl = 'ws://127.0.0.1:8000/ws/telemetry';
+      try {
+        telemetryWs = new WebSocket(wsUrl);
+
+        telemetryWs.onopen = () => {
+          console.log('[WebSocket] Connected to FloraGuard live telemetry stream');
+          updateBackendIndicator(true);
+        };
+
+        telemetryWs.onmessage = (event) => {
+          try {
+            const packet = JSON.parse(event.data);
+            handleIncomingPacket(packet);
+          } catch (e) {
+            console.warn('JSON parse error on WebSocket packet:', e);
+          }
+        };
+
+        telemetryWs.onclose = () => {
+          updateBackendIndicator(false);
+          setTimeout(connectTelemetryWebSocket, 3000);
+        };
+
+        telemetryWs.onerror = () => {
+          updateBackendIndicator(false);
+        };
+      } catch (err) {
+        updateBackendIndicator(false);
+        setTimeout(connectTelemetryWebSocket, 3000);
+      }
+    }
+
+    function handleIncomingPacket(packet) {
+      if (!packet || packet.temperature === undefined) return;
+
+      const isHardware = (packet.source === 'HARDWARE' || packet.is_simulated === false);
+      state.isLiveHardware = isHardware;
+      updateSourceBadge(isHardware);
+
+      const espDot = document.getElementById('esp32-dot');
+      const espDotPing = document.getElementById('esp32-dot-ping');
+      const espText = document.getElementById('esp32-status-text');
+
+      if (isHardware) {
+        // Halt client-side timer so real hardware is never overwritten
+        if (state.simInterval) {
+          clearInterval(state.simInterval);
+          state.simInterval = null;
+          state.simulationMode = false;
+          updateSimulationUI();
+        }
+        espDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-600';
+        espDotPing.className = 'absolute w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-ring';
+        espText.textContent = packet.device_id || 'ESP32-AGRI-01 (Live)';
+        espText.className = 'font-mono font-semibold text-emerald-800 text-xs mt-0.5';
+      }
+
+      updateDashboard({
+        temp: packet.temperature,
+        humidity: packet.humidity,
+        soil: packet.soil_moisture,
+        leafWetness: packet.rain_intensity || packet.leaf_wetness,
+        time: packet.timestamp || new Date().toLocaleTimeString(),
+        source: packet.source || (isHardware ? 'HARDWARE' : 'SIMULATION'),
+        deviceId: packet.device_id
+      });
+    }
+
+    function updateBackendIndicator(isOnline) {
+      const backendDot = document.getElementById('backend-dot');
+      const backendDotPing = document.getElementById('backend-dot-ping');
+      const backendText = document.getElementById('backend-status-text');
+
+      state.backendConnected = isOnline;
+      if (isOnline) {
+        backendDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-600';
+        backendDotPing.className = 'absolute w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-ring';
+        backendText.textContent = 'Online (Port 8000)';
+        backendText.className = 'font-semibold text-emerald-700 text-xs mt-0.5';
+      } else {
+        backendDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+        backendDotPing.className = 'hidden';
+        backendText.textContent = 'Offline (Standalone)';
+        backendText.className = 'font-semibold text-amber-700 text-xs mt-0.5';
+      }
+    }
+
+    async function checkFastAPIBackend() {
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/status', { cache: 'no-cache' });
+        if (res.ok) {
+          const data = await res.json();
+          updateBackendIndicator(true);
+
+          // Update ESP32 status from backend state
+          const espDot = document.getElementById('esp32-dot');
+          const espDotPing = document.getElementById('esp32-dot-ping');
+          const espText = document.getElementById('esp32-status-text');
+
+          if (data.hardware_connected) {
+            state.isLiveHardware = true;
+            updateSourceBadge(true);
+            espDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-600';
+            espDotPing.className = 'absolute w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-ring';
+            espText.textContent = data.active_device_id || 'ESP32-AGRI-01 (Live)';
+            espText.className = 'font-mono font-semibold text-emerald-800 text-xs mt-0.5';
+          } else if (!state.simulationMode) {
+            espDot.className = 'w-2.5 h-2.5 rounded-full bg-slate-400';
+            espDotPing.className = 'hidden';
+            espText.textContent = 'ESP32 Standby';
+            espText.className = 'font-mono font-semibold text-slate-600 text-xs mt-0.5';
+          }
+          return;
+        }
+      } catch (err) {
+        // Backend offline
+      }
+      updateBackendIndicator(false);
+    }
+
+    // ==========================================
+    // AI Leaf Disease Vision Classifier UI Logic
+    // ==========================================
+    let selectedLeafFile = null;
+
+    function handleImageSelection(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      selectedLeafFile = file;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('image-preview').src = e.target.result;
+        document.getElementById('upload-prompt').classList.add('hidden');
+        document.getElementById('image-preview-container').classList.remove('hidden');
+        document.getElementById('image-filename').textContent = file.name;
+
+        const btn = document.getElementById('classify-btn');
+        btn.disabled = false;
+        btn.className = 'flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs text-white bg-plant-600 hover:bg-plant-700 cursor-pointer transition shadow-md';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetImageClassifier() {
+      selectedLeafFile = null;
+      document.getElementById('leaf-image-input').value = '';
+      document.getElementById('image-preview').src = '#';
+      document.getElementById('upload-prompt').classList.remove('hidden');
+      document.getElementById('image-preview-container').classList.add('hidden');
+      document.getElementById('prediction-results').classList.add('hidden');
+      document.getElementById('prediction-placeholder').classList.remove('hidden');
+
+      const btn = document.getElementById('classify-btn');
+      btn.disabled = true;
+      btn.className = 'flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs text-white bg-slate-300 cursor-not-allowed transition shadow-sm';
+    }
+
+    async function submitLeafImageForAnalysis() {
+      if (!selectedLeafFile) return;
+
+      const btn = document.getElementById('classify-btn');
+      const btnText = document.getElementById('classify-btn-text');
+      btn.disabled = true;
+      btnText.textContent = 'Analyzing Morphology...';
+
+      const formData = new FormData();
+      formData.append('file', selectedLeafFile);
+
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/predict-image', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.detail || 'Analysis failed');
+        }
+        const data = await res.json();
+        displayPredictionResults(data);
+      } catch (err) {
+        alert('Leaf Disease Analysis Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Analyze Leaf Health';
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function displayPredictionResults(data) {
+      document.getElementById('prediction-placeholder').classList.add('hidden');
+      const resBox = document.getElementById('prediction-results');
+      resBox.classList.remove('hidden');
+
+      const pill = document.getElementById('res-health-pill');
+      if (data.is_healthy) {
+        pill.textContent = 'HEALTHY FOLIAGE';
+        pill.className = 'px-2.5 py-0.5 text-[11px] font-extrabold uppercase rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
+      } else {
+        pill.textContent = 'PATHOGEN DETECTED';
+        pill.className = 'px-2.5 py-0.5 text-[11px] font-extrabold uppercase rounded-full bg-rose-100 text-rose-800 border border-rose-200';
+      }
+
+      document.getElementById('res-disease-name').textContent = data.predicted_class;
+      document.getElementById('res-confidence-text').textContent = `${data.confidence}%`;
+      document.getElementById('res-confidence-bar').style.width = `${data.confidence}%`;
+
+      if (data.environmental_correlation) {
+        document.getElementById('res-env-box').classList.remove('hidden');
+        document.getElementById('res-env-text').textContent = data.environmental_correlation;
+      } else {
+        document.getElementById('res-env-box').classList.add('hidden');
+      }
+
+      const symList = document.getElementById('res-symptoms-list');
+      symList.innerHTML = '';
+      (data.symptoms || []).forEach(s => {
+        const li = document.createElement('li');
+        li.textContent = s;
+        symList.appendChild(li);
+      });
+
+      const treatList = document.getElementById('res-treatment-list');
+      treatList.innerHTML = '';
+      (data.treatment || []).forEach(t => {
+        const li = document.createElement('li');
+        li.textContent = t;
+        treatList.appendChild(li);
+      });
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Startup Initialization
+    window.addEventListener('DOMContentLoaded', async () => {
+      // 1. Initialize Icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      // 2. Initialize Chart.js
+      initCharts();
+
+      // 3. Pre-fill initial historical points for smooth visual charts
+      const now = new Date();
+      for (let i = 12; i >= 0; i--) {
+        const past = new Date(now.getTime() - i * 3000);
+        const pt = generateSimulatedReading();
+        pt.time = past.toLocaleTimeString();
+        updateDashboard(pt);
+      }
+
+      // 4. Start the 3-second simulation loop
+      startSimulation();
+
+      // 5. Connect WebSocket & poll backend status
+      connectTelemetryWebSocket();
+      checkFastAPIBackend();
+      setInterval(checkFastAPIBackend, 5000);
+    });
+  </script>
+</body>
+</html>
