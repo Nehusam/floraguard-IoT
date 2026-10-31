@@ -22,6 +22,7 @@
  */
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <DHT.h>
 #include <ArduinoJson.h>
@@ -35,8 +36,9 @@ const char* WIFI_SSID     = "Nehu's M02s";             // Wi-Fi SSID
 const char* WIFI_PASSWORD = "nkeu5653";               // Wi-Fi Password
 
 // Backend Server Configuration
-// Replace with your computer's Wi-Fi IPv4 address (e.g., "http://192.168.1.100:8000/api/telemetry")
-const char* SERVER_URL    = "http://192.168.98.227:8000/api/telemetry";
+// For CLOUD hosting (Render): use HTTPS URL below
+// For LOCAL testing: use "http://192.168.x.x:8000/api/telemetry"
+const char* SERVER_URL    = "https://floraguard-iot.onrender.com/api/telemetry";
 
 // Hardware Identity & Timing
 #define DEVICE_ID               "ESP32-AGRI-01"
@@ -158,9 +160,11 @@ void sendTelemetry(float temp, float hum, float soil, float leaf) {
   }
 
   HTTPClient http;
-  http.begin(SERVER_URL);
+  WiFiClientSecure secureClient;
+  secureClient.setInsecure(); // Skip certificate verification (acceptable for IoT project)
+  http.begin(secureClient, SERVER_URL);
   http.addHeader("Content-Type", "application/json");
-  http.setTimeout(2500); // 2.5 second network timeout
+  http.setTimeout(5000); // 5 second timeout for HTTPS
 
   // Build JSON Document
   StaticJsonDocument<256> doc;
