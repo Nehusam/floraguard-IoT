@@ -528,6 +528,141 @@ async def get_database_records(limit: int = 50, source: Optional[str] = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
 
+
+# ========================================================
+# Database Viewer Page (Presentation-friendly)
+# ========================================================
+@app.get("/database", response_class=HTMLResponse)
+async def database_viewer():
+    """Serves a clean, visual database viewer page for presentations."""
+    return """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FloraGuard - Database Viewer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f4f0; color: #1a2e1a; }
+  .header { background: linear-gradient(135deg, #1a5c2e, #2d8a4e); color: white; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 22px; font-weight: 600; }
+  .header h1 span { background: #ff9800; color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
+  .header .back-link { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 14px; }
+  .header .back-link:hover { color: #fff; }
+  .stats-bar { display: flex; gap: 16px; padding: 20px 32px; flex-wrap: wrap; }
+  .stat-card { background: white; border-radius: 12px; padding: 16px 24px; flex: 1; min-width: 160px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .stat-card .label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card .value { font-size: 28px; font-weight: 700; color: #1a5c2e; margin-top: 4px; }
+  .stat-card .sub { font-size: 12px; color: #999; margin-top: 2px; }
+  .controls { padding: 0 32px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .controls select, .controls input { padding: 8px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; }
+  .controls button { padding: 8px 20px; background: #1a5c2e; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .controls button:hover { background: #2d8a4e; }
+  .controls .refresh-btn { background: #ff9800; }
+  .controls .refresh-btn:hover { background: #f57c00; }
+  .table-wrap { padding: 0 32px 32px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  th { background: #1a5c2e; color: white; padding: 12px 16px; text-align: left; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; }
+  td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+  tr:hover td { background: #f8fdf8; }
+  .risk-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .risk-LOW { background: #e8f5e9; color: #2e7d32; }
+  .risk-MODERATE { background: #fff3e0; color: #e65100; }
+  .risk-HIGH { background: #ffebee; color: #c62828; }
+  .risk-CRITICAL { background: #f44336; color: white; }
+  .source-badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+  .source-HARDWARE { background: #e3f2fd; color: #1565c0; }
+  .source-SIMULATION { background: #f3e5f5; color: #7b1fa2; }
+  .empty-msg { text-align: center; padding: 60px; color: #999; font-size: 16px; }
+  @media (max-width: 768px) { .stats-bar { flex-direction: column; } .table-wrap { padding: 0 12px 20px; } th, td { padding: 8px 10px; font-size: 12px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>FloraGuard <span>DATABASE</span></h1>
+  <a class="back-link" href="/">Back to Dashboard</a>
+</div>
+
+<div class="stats-bar" id="stats">
+  <div class="stat-card"><div class="label">Total Records</div><div class="value" id="totalRecords">--</div><div class="sub">All telemetry entries</div></div>
+  <div class="stat-card"><div class="label">Hardware Records</div><div class="value" id="hwRecords">--</div><div class="sub">From ESP32 sensors</div></div>
+  <div class="stat-card"><div class="label">Database</div><div class="value" style="font-size:20px" id="dbName">SQLite3</div><div class="sub" id="dbFile">floraguard.db</div></div>
+  <div class="stat-card"><div class="label">Last Updated</div><div class="value" style="font-size:18px" id="lastUpdated">--</div><div class="sub">Most recent entry</div></div>
+</div>
+
+<div class="controls">
+  <select id="sourceFilter">
+    <option value="">All Sources</option>
+    <option value="HARDWARE">Hardware Only</option>
+    <option value="SIMULATION">Simulation Only</option>
+  </select>
+  <select id="limitSelect">
+    <option value="20">20 rows</option>
+    <option value="50" selected>50 rows</option>
+    <option value="100">100 rows</option>
+    <option value="200">200 rows</option>
+  </select>
+  <button onclick="loadData()">Apply Filter</button>
+  <button class="refresh-btn" onclick="loadData()">Refresh</button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Device</th><th>Temp (C)</th><th>Humidity (%)</th><th>Soil (%)</th><th>Rain (%)</th><th>Risk</th><th>Level</th><th>Diagnosis</th><th>Source</th><th>Timestamp</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <tr><td colspan="11" class="empty-msg">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+async function loadData() {
+  const source = document.getElementById('sourceFilter').value;
+  const limit = document.getElementById('limitSelect').value;
+  let url = '/api/database/records?limit=' + limit;
+  if (source) url += '&source=' + source;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    document.getElementById('totalRecords').textContent = data.total_records.toLocaleString();
+    document.getElementById('hwRecords').textContent = data.hardware_records.toLocaleString();
+    document.getElementById('dbFile').textContent = data.file;
+    const tbody = document.getElementById('tableBody');
+    if (!data.records || data.records.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="11" class="empty-msg">No records found</td></tr>';
+      document.getElementById('lastUpdated').textContent = '--';
+      return;
+    }
+    document.getElementById('lastUpdated').textContent = data.records[0].created_at || data.records[0].timestamp || '--';
+    tbody.innerHTML = data.records.map(r => '<tr>'
+      + '<td>' + r.id + '</td>'
+      + '<td>' + r.device_id + '</td>'
+      + '<td>' + r.temperature + '</td>'
+      + '<td>' + r.humidity + '</td>'
+      + '<td>' + r.soil_moisture + '</td>'
+      + '<td>' + r.rain_intensity + '</td>'
+      + '<td>' + r.risk_score + '/100</td>'
+      + '<td><span class="risk-badge risk-' + r.risk_level + '">' + r.risk_level + '</span></td>'
+      + '<td>' + (r.diagnosis || '--') + '</td>'
+      + '<td><span class="source-badge source-' + r.source + '">' + r.source + '</span></td>'
+      + '<td>' + (r.created_at || r.timestamp) + '</td>'
+      + '</tr>').join('');
+  } catch(e) {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="11" class="empty-msg">Error: ' + e.message + '</td></tr>';
+  }
+}
+loadData();
+setInterval(loadData, 10000);
+</script>
+</body>
+</html>"""
+
+
 # ========================================================
 # WebSocket Endpoint for Live Updates
 # ========================================================
