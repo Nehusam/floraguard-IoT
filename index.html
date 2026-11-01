@@ -681,15 +681,24 @@
       connectWebSocket();
 
       // Fetch latest from API on load
+      fetchLatestTelemetry();
+
+      // Auto-poll fallback every 3 seconds to guarantee real-time updates even if WebSocket disconnects
+      setInterval(fetchLatestTelemetry, 3000);
+    });
+
+    let lastKnownTimestamp = null;
+    function fetchLatestTelemetry() {
       fetch('/api/telemetry/latest')
         .then(res => res.json())
         .then(data => {
-          if (data && data.temperature) {
+          if (data && data.temperature && data.timestamp !== lastKnownTimestamp) {
+            lastKnownTimestamp = data.timestamp;
             handlePacket(data);
           }
         })
         .catch(() => {});
-    });
+    }
   </script>
 </body>
 </html>
