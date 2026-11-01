@@ -139,7 +139,7 @@ The dashboard is built using standard HTML5, Tailwind CSS, Lucide Icons, and Cha
 - **Microclimate Cards:** 4 real-time parameter cards (Air Temp, Relative Humidity, Soil Moisture, Rain Intensity).
 - **Disease Assessment Engine:** Computes fungal blight risk using Mills Period baseline and provides immediate remediation guidelines.
 - **Dual Visual Charts:** Real-time historical line charts for Atmospheric (Temp vs Humidity) and Hydrological (Soil vs Rain) readings.
-- **AI Leaf Vision Classifier:** Integrated computer vision model for diagnosing diseased plant leaves from photographs.
+- **Dedicated Database Viewer (`/database`):** Clean administrative interface presenting persistent SQLite3 records, risk metrics, and filter controls.
 
 ---
 

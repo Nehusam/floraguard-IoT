@@ -1,6 +1,6 @@
 # FloraGuard IoT | Plant Disease Detection & Early Warning System
 
-A comprehensive, end-to-end IoT and Machine Learning platform engineered for **agricultural microclimate monitoring, epidemiological fungal disease risk scoring, and automated plant leaf vision diagnostics**.
+A comprehensive, end-to-end IoT platform engineered for **agricultural microclimate monitoring, epidemiological fungal disease risk scoring, and real-time botanical telemetry**.
 
 ---
 
@@ -25,8 +25,8 @@ A comprehensive, end-to-end IoT and Machine Learning platform engineered for **a
                               │               │
             ┌─────────────────┴─┐           ┌─┴─────────────────────────┐
             ▼                   ▼           ▼                           ▼
-   [ Mills Period Risk ]  [Ring Buffer]  [Vision AI Classifier]  [WebSocket Stream]
-   (Epidemiological Engine) (100 packets)  (/api/predict-image)     (/ws/telemetry)
+   [ Mills Period Risk ]  [SQLite3 DB]  [Ring Buffer]           [WebSocket Stream]
+   (Epidemiological Engine) (Persistence) (100 packets)            (/ws/telemetry)
             │                   │           │                           │
             └───────────────────┴─────┬─────┴───────────────────────────┘
                                       ▼
@@ -43,7 +43,7 @@ A comprehensive, end-to-end IoT and Machine Learning platform engineered for **a
 ```
 Plant Disease Dashoboard-IoT Project/
 ├── index.html            # Integrated botanical dashboard (Tailwind CSS, Chart.js, Lucide Icons)
-├── backend.py            # FastAPI backend with REST API, WebSocket streaming & Leaf Vision AI
+├── backend.py            # FastAPI backend with REST API, SQLite3 persistence & WebSocket streaming
 ├── esp32_firmware.ino    # Production ESP32 firmware with noise filtering & offline fallback
 ├── dht_sensor_test.ino   # Standalone DHT11 hardware diagnostic test sketch
 ├── test_integration.py   # Automated integration test suite (100% test coverage)
@@ -136,20 +136,6 @@ Before configuring Wi-Fi:
 
 ---
 
-## 🍃 AI Leaf Disease Vision Classification
-
-The dashboard includes a dedicated **AI Plant Disease Vision Classifier**:
-1. Navigate to the **AI Plant Disease Vision Classifier** card on the dashboard.
-2. Drag and drop or browse for a plant leaf photo (JPEG, PNG, WEBP).
-3. Click **Analyze Leaf Health**.
-4. The system executes:
-   - **Chlorophyll & Necrosis Segmentation**: Analyzes healthy green ratios, chlorosis (yellowing), and necrotic lesion indices.
-   - **Pathogen Identification**: Maps lesion morphology to PlantVillage profiles (*Tomato Early/Late Blight*, *Potato Blight*, *Apple Scab*, *Corn Rust*, etc.).
-   - **Environmental Telemetry Cross-Correlation**: Evaluates current ambient humidity and leaf surface wetness against pathogen germination criteria.
-   - **Agronomic Prescriptions**: Delivers immediate cultural, biological, and chemical prevention and treatment advisories.
-
----
-
 ## 📡 API Endpoints Reference
 
 | Method | Endpoint | Description |
@@ -161,7 +147,8 @@ The dashboard includes a dedicated **AI Plant Disease Vision Classifier**:
 | `POST` | `/api/telemetry` | Ingests sensor readings from ESP32, runs Mills Period risk scoring |
 | `GET` | `/api/telemetry/latest` | Returns the most recent telemetry packet |
 | `GET` | `/api/telemetry/history` | Returns historical records for chart initialization |
-| `POST` | `/api/predict-image` | Uploads plant leaf image and returns AI pathogen diagnosis |
+| `GET` | `/api/database/records` | Returns persistent SQLite3 records |
+| `GET` | `/database` | Visual database viewer web page |
 | `WS` | `/ws/telemetry` | Zero-latency WebSocket stream for real-time dashboard updates |
 
 ---
