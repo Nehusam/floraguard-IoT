@@ -2,10 +2,9 @@ import sys
 import os
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether, HRFlowable
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 )
 from reportlab.pdfgen import canvas
 
@@ -29,12 +28,12 @@ class NumberedCanvas(canvas.Canvas):
     def draw_page_decorations(self, page_count):
         self.saveState()
         self.setFont("Helvetica", 8)
-        self.setFillColor(colors.HexColor("#718096"))
+        self.setFillColor(colors.black)
         
         # Header (pages > 1)
         if self._pageNumber > 1:
             self.drawString(54, 842 - 36, "FloraGuard IoT — Project & Combined Assignment Report")
-            self.setStrokeColor(colors.HexColor("#E2E8F0"))
+            self.setStrokeColor(colors.black)
             self.setLineWidth(0.5)
             self.line(54, 842 - 42, 595 - 54, 842 - 42)
             
@@ -42,7 +41,7 @@ class NumberedCanvas(canvas.Canvas):
         footer_text = f"Page {self._pageNumber} of {page_count}"
         self.drawRightString(595 - 54, 36, footer_text)
         self.drawString(54, 36, "Amal Jyothi College of Engineering • Dept. of Computer Applications • 24MCAT213")
-        self.setStrokeColor(colors.HexColor("#E2E8F0"))
+        self.setStrokeColor(colors.black)
         self.setLineWidth(0.5)
         self.line(54, 46, 595 - 54, 46)
         self.restoreState()
@@ -59,41 +58,36 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
 
     styles = getSampleStyleSheet()
 
-    # Custom styles
-    primary_color = colors.HexColor("#1A5C2E")
-    secondary_color = colors.HexColor("#2D8A4E")
-    dark_slate = colors.HexColor("#1A202C")
-    body_color = colors.HexColor("#2D3748")
-
+    # Monochrome Palette (Pure Black, White, Grays)
     title_style = ParagraphStyle(
         'DocTitle',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=20,
-        leading=24,
-        textColor=primary_color,
+        fontSize=18,
+        leading=22,
+        textColor=colors.black,
         alignment=1,
-        spaceAfter=6
+        spaceAfter=4
     )
 
     subtitle_style = ParagraphStyle(
         'DocSubtitle',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=11,
-        leading=15,
-        textColor=secondary_color,
+        fontSize=10.5,
+        leading=14,
+        textColor=colors.black,
         alignment=1,
-        spaceAfter=14
+        spaceAfter=12
     )
 
     inst_style = ParagraphStyle(
         'InstTitle',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=12,
-        leading=15,
-        textColor=dark_slate,
+        fontSize=11,
+        leading=14,
+        textColor=colors.black,
         alignment=1,
         spaceAfter=2
     )
@@ -102,22 +96,22 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         'InstSub',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=10,
+        fontSize=9.5,
         leading=13,
-        textColor=colors.HexColor("#4A5568"),
+        textColor=colors.HexColor("#333333"),
         alignment=1,
-        spaceAfter=12
+        spaceAfter=10
     )
 
     h1_style = ParagraphStyle(
         'Heading1_Custom',
         parent=styles['Heading1'],
         fontName='Helvetica-Bold',
-        fontSize=13,
-        leading=17,
-        textColor=primary_color,
-        spaceBefore=14,
-        spaceAfter=6,
+        fontSize=12,
+        leading=16,
+        textColor=colors.black,
+        spaceBefore=12,
+        spaceAfter=5,
         keepWithNext=True
     )
 
@@ -125,11 +119,11 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         'Heading2_Custom',
         parent=styles['Heading2'],
         fontName='Helvetica-Bold',
-        fontSize=10.5,
-        leading=14,
-        textColor=secondary_color,
-        spaceBefore=8,
-        spaceAfter=4,
+        fontSize=10,
+        leading=13,
+        textColor=colors.black,
+        spaceBefore=7,
+        spaceAfter=3,
         keepWithNext=True
     )
 
@@ -139,8 +133,8 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         fontName='Helvetica',
         fontSize=9,
         leading=13,
-        textColor=body_color,
-        spaceAfter=6
+        textColor=colors.black,
+        spaceAfter=5
     )
 
     bullet_style = ParagraphStyle(
@@ -149,7 +143,7 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         fontName='Helvetica',
         fontSize=9,
         leading=13,
-        textColor=body_color,
+        textColor=colors.black,
         leftIndent=14,
         firstLineIndent=-10,
         spaceAfter=3
@@ -159,9 +153,9 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         'Code_Custom',
         parent=styles['Normal'],
         fontName='Courier',
-        fontSize=7.8,
-        leading=10.5,
-        textColor=colors.HexColor("#1A202C")
+        fontSize=8,
+        leading=11,
+        textColor=colors.black
     )
 
     table_cell = ParagraphStyle(
@@ -170,7 +164,7 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         fontName='Helvetica',
         fontSize=8,
         leading=10.5,
-        textColor=body_color
+        textColor=colors.black
     )
 
     table_cell_bold = ParagraphStyle(
@@ -179,7 +173,7 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         fontName='Helvetica-Bold',
         fontSize=8,
         leading=10.5,
-        textColor=dark_slate
+        textColor=colors.black
     )
 
     table_head = ParagraphStyle(
@@ -188,7 +182,7 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         fontName='Helvetica-Bold',
         fontSize=8,
         leading=10.5,
-        textColor=colors.white
+        textColor=colors.black
     )
 
     story = []
@@ -196,7 +190,7 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
     # Institution Header
     story.append(Paragraph("AMAL JYOTHI COLLEGE OF ENGINEERING, KANJIRAPPALLY", inst_style))
     story.append(Paragraph("DEPARTMENT OF COMPUTER APPLICATIONS<br/>24MCAT213 - INTERNET OF THINGS (MCA 2025-27, SEMESTER 3)", inst_sub))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=primary_color, spaceBefore=4, spaceAfter=14))
+    story.append(HRFlowable(width="100%", thickness=1.0, color=colors.black, spaceBefore=2, spaceAfter=10))
 
     # Title
     story.append(Paragraph("FloraGuard IoT", title_style))
@@ -210,16 +204,15 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
     ]
     t_meta = Table(meta_data, colWidths=[240, 240])
     t_meta.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F7FAFC")),
-        ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#E2E8F0")),
-        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor("#EDF2F7")),
+        ('BOX', (0,0), (-1,-1), 1, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor("#AAAAAA")),
         ('TOPPADDING', (0,0), (-1,-1), 4),
         ('BOTTOMPADDING', (0,0), (-1,-1), 4),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
         ('RIGHTPADDING', (0,0), (-1,-1), 8),
     ]))
     story.append(t_meta)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
     # 1. ABSTRACT
     story.append(Paragraph("1. Abstract & Problem Statement", h1_style))
@@ -264,11 +257,10 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
     ]
     t_pin = Table(pin_data, colWidths=[80, 75, 75, 95, 155])
     t_pin.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), primary_color),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#EEEEEE")),
         ('ALIGN', (0,0), (-1,-1), 'LEFT'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E0")),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#F7FAFC")]),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('TOPPADDING', (0,0), (-1,-1), 3),
         ('BOTTOMPADDING', (0,0), (-1,-1), 3),
         ('LEFTPADDING', (0,0), (-1,-1), 6),
@@ -298,8 +290,8 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
     )
     t_code = Table([[Paragraph(json_snippet.replace('\n', '<br/>').replace(' ', '&nbsp;'), code_style)]], colWidths=[480])
     t_code.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#EDF2F7")),
-        ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#CBD5E0")),
+        ('BOX', (0,0), (-1,-1), 1, colors.black),
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F5F5F5")),
         ('TOPPADDING', (0,0), (-1,-1), 4),
         ('BOTTOMPADDING', (0,0), (-1,-1), 4),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
@@ -333,9 +325,8 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
     ]
     t_schema = Table(schema_data, colWidths=[90, 65, 135, 190])
     t_schema.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), primary_color),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E0")),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#F7FAFC")]),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#EEEEEE")),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('TOPPADDING', (0,0), (-1,-1), 2.5),
         ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
         ('LEFTPADDING', (0,0), (-1,-1), 5),
@@ -347,7 +338,7 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
     story.append(Paragraph("Database Endpoints & Presentation Viewer", h2_style))
     db_features = [
         "<b>REST API (<code>GET /api/database/records</code>):</b> Supports limit parameters and source filtering (<code>HARDWARE</code> vs <code>SIMULATION</code>), returning full audit counts and JSON data.",
-        "<b>Visual Database Viewer (<code>GET /database</code>):</b> A dedicated, clean web UI created specifically for viva and presentation sessions. Features real-time statistics cards, dynamic filtering, color-coded risk tags, and 10-second auto-refresh."
+        "<b>Visual Database Viewer (<code>GET /database</code>):</b> A dedicated, clean web UI created specifically for viva and presentation sessions. Features real-time statistics cards, dynamic filtering, structured risk tags, and 10-second auto-refresh."
     ]
     for feat in db_features:
         story.append(Paragraph(f"• {feat}", bullet_style))
@@ -381,20 +372,19 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
     
     test_data = [
         [Paragraph("Test ID", table_head), Paragraph("Test Case", table_head), Paragraph("Procedure", table_head), Paragraph("Expected Result", table_head), Paragraph("Status", table_head)],
-        [Paragraph("TC-01", table_cell_bold), Paragraph("Wi-Fi Connection", table_cell), Paragraph("Power ESP32; authenticate to AP", table_cell), Paragraph("IP assigned, serial prints success", table_cell), Paragraph("<font color='#2D8A4E'><b>PASS</b></font>", table_cell)],
-        [Paragraph("TC-02", table_cell_bold), Paragraph("DHT11 Sampling", table_cell), Paragraph("Read temp and humidity registers", table_cell), Paragraph("Valid numeric °C and % values (non-NaN)", table_cell), Paragraph("<font color='#2D8A4E'><b>PASS</b></font>", table_cell)],
-        [Paragraph("TC-03", table_cell_bold), Paragraph("Soil Probe ADC", table_cell), Paragraph("Place probe in dry soil vs wet soil", table_cell), Paragraph("Analog percentage scales 15% to 85%", table_cell), Paragraph("<font color='#2D8A4E'><b>PASS</b></font>", table_cell)],
-        [Paragraph("TC-04", table_cell_bold), Paragraph("Rain Sensor Grid", table_cell), Paragraph("Apply water droplet onto sensor plate", table_cell), Paragraph("Rain intensity jumps from 0% to >80%", table_cell), Paragraph("<font color='#2D8A4E'><b>PASS</b></font>", table_cell)],
-        [Paragraph("TC-05", table_cell_bold), Paragraph("HTTP/HTTPS Telemetry", table_cell), Paragraph("ESP32 POST to /api/telemetry", table_cell), Paragraph("HTTP 200 response with risk scoring", table_cell), Paragraph("<font color='#2D8A4E'><b>PASS</b></font>", table_cell)],
-        [Paragraph("TC-06", table_cell_bold), Paragraph("Database Logging", table_cell), Paragraph("Inspect SQLite3 table records", table_cell), Paragraph("460+ rows recorded with HARDWARE tag", table_cell), Paragraph("<font color='#2D8A4E'><b>PASS</b></font>", table_cell)],
-        [Paragraph("TC-07", table_cell_bold), Paragraph("Live Dashboard Sync", table_cell), Paragraph("Open web dashboard on browser", table_cell), Paragraph("Badge switches to LIVE HARDWARE DATA", table_cell), Paragraph("<font color='#2D8A4E'><b>PASS</b></font>", table_cell)],
-        [Paragraph("TC-08", table_cell_bold), Paragraph("Cloud Deployment", table_cell), Paragraph("Access Render public URL", table_cell), Paragraph("Fully operational live cloud service", table_cell), Paragraph("<font color='#2D8A4E'><b>PASS</b></font>", table_cell)],
+        [Paragraph("TC-01", table_cell_bold), Paragraph("Wi-Fi Connection", table_cell), Paragraph("Power ESP32; authenticate to AP", table_cell), Paragraph("IP assigned, serial prints success", table_cell), Paragraph("<b>PASS</b>", table_cell)],
+        [Paragraph("TC-02", table_cell_bold), Paragraph("DHT11 Sampling", table_cell), Paragraph("Read temp and humidity registers", table_cell), Paragraph("Valid numeric °C and % values (non-NaN)", table_cell), Paragraph("<b>PASS</b>", table_cell)],
+        [Paragraph("TC-03", table_cell_bold), Paragraph("Soil Probe ADC", table_cell), Paragraph("Place probe in dry soil vs wet soil", table_cell), Paragraph("Analog percentage scales 15% to 85%", table_cell), Paragraph("<b>PASS</b>", table_cell)],
+        [Paragraph("TC-04", table_cell_bold), Paragraph("Rain Sensor Grid", table_cell), Paragraph("Apply water droplet onto sensor plate", table_cell), Paragraph("Rain intensity jumps from 0% to >80%", table_cell), Paragraph("<b>PASS</b>", table_cell)],
+        [Paragraph("TC-05", table_cell_bold), Paragraph("HTTP/HTTPS Telemetry", table_cell), Paragraph("ESP32 POST to /api/telemetry", table_cell), Paragraph("HTTP 200 response with risk scoring", table_cell), Paragraph("<b>PASS</b>", table_cell)],
+        [Paragraph("TC-06", table_cell_bold), Paragraph("Database Logging", table_cell), Paragraph("Inspect SQLite3 table records", table_cell), Paragraph("460+ rows recorded with HARDWARE tag", table_cell), Paragraph("<b>PASS</b>", table_cell)],
+        [Paragraph("TC-07", table_cell_bold), Paragraph("Live Dashboard Sync", table_cell), Paragraph("Open web dashboard on browser", table_cell), Paragraph("Badge switches to LIVE HARDWARE DATA", table_cell), Paragraph("<b>PASS</b>", table_cell)],
+        [Paragraph("TC-08", table_cell_bold), Paragraph("Cloud Deployment", table_cell), Paragraph("Access Render public URL", table_cell), Paragraph("Fully operational live cloud service", table_cell), Paragraph("<b>PASS</b>", table_cell)],
     ]
     t_test = Table(test_data, colWidths=[40, 95, 130, 165, 50])
     t_test.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), primary_color),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E0")),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#F7FAFC")]),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#EEEEEE")),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('ALIGN', (0,0), (-1,-1), 'LEFT'),
         ('ALIGN', (4,1), (4,-1), 'CENTER'),
         ('TOPPADDING', (0,0), (-1,-1), 2.5),
@@ -416,7 +406,7 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
     story.append(Paragraph(concl_text, body_style))
 
     doc.build(story, canvasmaker=NumberedCanvas)
-    print(f"PDF generated successfully: {filename}")
+    print(f"Monochrome PDF generated successfully: {filename}")
 
 if __name__ == "__main__":
     build_pdf()
