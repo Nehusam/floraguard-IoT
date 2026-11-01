@@ -120,7 +120,7 @@ active_connections: List[WebSocket] = []
 backend_start_time = datetime.now()
 
 # Operating Mode: "SIMULATION" or "HARDWARE"
-operating_mode = "SIMULATION"
+operating_mode = "HARDWARE"
 simulation_task: Optional[asyncio.Task] = None
 
 # Hardware Node Tracking
@@ -290,23 +290,51 @@ async def internal_simulator():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global simulation_task
-    # Startup: populate 5 baseline records so charts have immediate history
-    now = datetime.now()
-    for i in range(5, 0, -1):
-        ts = (now - timedelta(seconds=i*3)).strftime("%H:%M:%S")
-        temp, hum, soil, leaf = 24.0, 65.0, 62.0, 20.0
-        risk = compute_disease_risk(temp, hum, leaf)
-        telemetry_history.append({
-            "device_id": "SYSTEM-INIT",
-            "temperature": temp,
-            "humidity": hum,
-            "soil_moisture": soil,
-            "leaf_wetness": leaf,
-            "timestamp": ts,
-            "source": "SIMULATION",
-            "is_simulated": True,
-            "risk": risk.model_dump()
-        })
+    # Startup: populate latest hardware records from SQLite database so charts have immediate history
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM sensor_telemetry ORDER BY id DESC LIMIT 15")
+        rows = cursor.fetchall()
+        conn.close()
+        for r in reversed(rows):
+            rain_val = r["rain_intensity"] if "rain_intensity" in r.keys() else r["leaf_wetness"]
+            risk_calc = compute_disease_risk(r["temperature"], r["humidity"], rain_val)
+            telemetry_history.append({
+                "device_id": r["device_id"],
+                "temperature": r["temperature"],
+                "humidity": r["humidity"],
+                "soil_moisture": r["soil_moisture"],
+                "leaf_wetness": rain_val,
+                "rain_intensity": rain_val,
+                "timestamp": r["timestamp"],
+                "source": r["source"],
+                "is_simulated": (r["source"] != "HARDWARE"),
+                "risk": risk_calc.model_dump()
+            })
+    except Exception as db_err:
+        print(f"[DB Init Load Warning] {db_err}")
+
+    # Fallback if DB empty: create neutral baseline records
+    if not telemetry_history:
+        now = datetime.now()
+        for i in range(5, 0, -1):
+            ts = (now - timedelta(seconds=i*3)).strftime("%H:%M:%S")
+            temp, hum, soil, leaf = 25.0, 65.0, 50.0, 20.0
+            risk = compute_disease_risk(temp, hum, leaf)
+            telemetry_history.append({
+                "device_id": "ESP32-AGRI-01",
+                "temperature": temp,
+                "humidity": hum,
+                "soil_moisture": soil,
+                "leaf_wetness": leaf,
+                "rain_intensity": leaf,
+                "timestamp": ts,
+                "source": "HARDWARE",
+                "is_simulated": False,
+                "risk": risk.model_dump()
+            })
 
     # Start simulation worker
     simulation_task = asyncio.create_task(internal_simulator())
