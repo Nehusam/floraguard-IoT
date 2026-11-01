@@ -4,7 +4,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
 )
 from reportlab.pdfgen import canvas
 
@@ -32,7 +32,7 @@ class NumberedCanvas(canvas.Canvas):
         
         # Header (pages > 1)
         if self._pageNumber > 1:
-            self.drawString(54, 842 - 36, "FloraGuard IoT — Project & Combined Assignment Report")
+            self.drawString(54, 842 - 36, "FLORAGUARD IOT — PLANT DISEASE DETECTION & EARLY WARNING SYSTEM")
             self.setStrokeColor(colors.black)
             self.setLineWidth(0.5)
             self.line(54, 842 - 42, 595 - 54, 842 - 42)
@@ -58,60 +58,27 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
 
     styles = getSampleStyleSheet()
 
-    # Monochrome Palette (Pure Black, White, Grays)
+    # Exact Clean Styling matching the standard academic template
     title_style = ParagraphStyle(
         'DocTitle',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=18,
-        leading=22,
+        fontSize=15,
+        leading=19,
         textColor=colors.black,
         alignment=1,
-        spaceAfter=4
-    )
-
-    subtitle_style = ParagraphStyle(
-        'DocSubtitle',
-        parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=10.5,
-        leading=14,
-        textColor=colors.black,
-        alignment=1,
-        spaceAfter=12
-    )
-
-    inst_style = ParagraphStyle(
-        'InstTitle',
-        parent=styles['Normal'],
-        fontName='Helvetica-Bold',
-        fontSize=11,
-        leading=14,
-        textColor=colors.black,
-        alignment=1,
-        spaceAfter=2
-    )
-
-    inst_sub = ParagraphStyle(
-        'InstSub',
-        parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=9.5,
-        leading=13,
-        textColor=colors.HexColor("#333333"),
-        alignment=1,
-        spaceAfter=10
+        spaceAfter=14
     )
 
     h1_style = ParagraphStyle(
         'Heading1_Custom',
         parent=styles['Heading1'],
         fontName='Helvetica-Bold',
-        fontSize=12,
-        leading=16,
+        fontSize=11,
+        leading=15,
         textColor=colors.black,
-        spaceBefore=12,
-        spaceAfter=5,
+        spaceBefore=11,
+        spaceAfter=4,
         keepWithNext=True
     )
 
@@ -119,10 +86,10 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         'Heading2_Custom',
         parent=styles['Heading2'],
         fontName='Helvetica-Bold',
-        fontSize=10,
+        fontSize=9.5,
         leading=13,
         textColor=colors.black,
-        spaceBefore=7,
+        spaceBefore=6,
         spaceAfter=3,
         keepWithNext=True
     )
@@ -132,7 +99,7 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         parent=styles['Normal'],
         fontName='Helvetica',
         fontSize=9,
-        leading=13,
+        leading=13.5,
         textColor=colors.black,
         spaceAfter=5
     )
@@ -146,16 +113,7 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
         textColor=colors.black,
         leftIndent=14,
         firstLineIndent=-10,
-        spaceAfter=3
-    )
-
-    code_style = ParagraphStyle(
-        'Code_Custom',
-        parent=styles['Normal'],
-        fontName='Courier',
-        fontSize=8,
-        leading=11,
-        textColor=colors.black
+        spaceAfter=2.5
     )
 
     table_cell = ParagraphStyle(
@@ -187,226 +145,241 @@ def build_pdf(filename="FloraGuard_IoT_Project_Report.pdf"):
 
     story = []
 
-    # Institution Header
-    story.append(Paragraph("AMAL JYOTHI COLLEGE OF ENGINEERING, KANJIRAPPALLY", inst_style))
-    story.append(Paragraph("DEPARTMENT OF COMPUTER APPLICATIONS<br/>24MCAT213 - INTERNET OF THINGS (MCA 2025-27, SEMESTER 3)", inst_sub))
-    story.append(HRFlowable(width="100%", thickness=1.0, color=colors.black, spaceBefore=2, spaceAfter=10))
-
-    # Title
-    story.append(Paragraph("FloraGuard IoT", title_style))
-    story.append(Paragraph("Agricultural Microclimate Telemetry & Plant Pathogen Early Warning System<br/>with SQLite3 Persistence, Containerized Backend & Real-Time Dashboard", subtitle_style))
-
-    # Meta Table
-    meta_data = [
-        [Paragraph("<b>Course Code:</b> 24MCAT213 - Internet of Things", table_cell), Paragraph("<b>Date:</b> November 2026", table_cell)],
-        [Paragraph("<b>Target Hardware:</b> ESP32 DevKit v1", table_cell), Paragraph("<b>Cloud Platform:</b> Render.com (Docker)", table_cell)],
-        [Paragraph("<b>Public Cloud URL:</b> https://floraguard-iot.onrender.com", table_cell), Paragraph("<b>Database:</b> SQLite3 (floraguard.db)", table_cell)]
-    ]
-    t_meta = Table(meta_data, colWidths=[240, 240])
-    t_meta.setStyle(TableStyle([
-        ('BOX', (0,0), (-1,-1), 1, colors.black),
-        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor("#AAAAAA")),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ('LEFTPADDING', (0,0), (-1,-1), 8),
-        ('RIGHTPADDING', (0,0), (-1,-1), 8),
-    ]))
-    story.append(t_meta)
-    story.append(Spacer(1, 8))
-
-    # 1. ABSTRACT
-    story.append(Paragraph("1. Abstract & Problem Statement", h1_style))
-    abstract_text = (
-        "<b>FloraGuard IoT</b> is an end-to-end smart agricultural microclimate telemetry and automated plant pathogen "
-        "early warning system. Using an <b>ESP32 microcontroller</b>, the system acquires real-time environmental metrics "
-        "from three physical sensors: ambient air temperature and relative humidity via a digital <b>DHT11 sensor</b>, "
-        "soil moisture saturation via an <b>analog capacitive probe</b>, and surface precipitation/leaf wetness via a "
-        "<b>conductive rain sensor grid</b>. Telemetry readings are packaged into structured JSON payloads and transmitted "
-        "over Wi-Fi via HTTP/HTTPS POST to a high-performance <b>FastAPI</b> backend service backed by an <b>SQLite3 relational database</b>. "
-        "An integrated epidemiological calculation engine evaluates fungal late blight (<i>Phytophthora infestans</i>) and "
-        "downy mildew threats based on the agricultural <b>Mills Period Infection Model</b>. The live readings, historical charts, "
-        "and pathogen risk levels are broadcast to a responsive web dashboard via WebSockets and accessible through a visual "
-        "database management interface."
-    )
-    story.append(Paragraph(abstract_text, body_style))
-
-    # 2. HARDWARE SPECIFICATIONS
-    story.append(Paragraph("2. Hardware Specifications & Interfacing Matrix", h1_style))
-    story.append(Paragraph("The physical node comprises four core hardware modules engineered for stable edge acquisition:", body_style))
-
-    hw_items = [
-        "<b>ESP32 Dev Module (ESP-WROOM-32):</b> 240MHz dual-core Xtensa LX6 processor with integrated 2.4 GHz Wi-Fi (802.11 b/g/n), 520 KB SRAM, and 12-bit ADC channels.",
-        "<b>DHT11 Sensor:</b> Calibrated digital signal output measuring air temperature (0–50°C, ±2°C) and relative humidity (20–90% RH, ±5%).",
-        "<b>Capacitive Soil Moisture Probe v1.2:</b> Corrosion-resistant analog probe measuring volumetric water content by dielectric permittivity.",
-        "<b>Rain / Leaf Wetness Module:</b> Interdigital nickel-plated sensor grid tracking liquid precipitation and dew accumulation.",
-        "<b>Status LED Indicator:</b> Active GPIO pin signaling network transmission and hardware heartbeat."
-    ]
-    for item in hw_items:
-        story.append(Paragraph(f"• {item}", bullet_style))
-
+    # Title Banner (All Caps matching reference standard)
+    story.append(Paragraph("FLORAGUARD: IOT-BASED PLANT DISEASE DETECTION & EARLY WARNING SYSTEM", title_style))
     story.append(Spacer(1, 4))
-    story.append(Paragraph("Sensor Wiring & Interfacing Pinout", h2_style))
 
-    pin_data = [
-        [Paragraph("Sensor Module", table_head), Paragraph("Module Pin", table_head), Paragraph("ESP32 Pin", table_head), Paragraph("Interface / Mode", table_head), Paragraph("Description", table_head)],
-        [Paragraph("DHT11", table_cell_bold), Paragraph("DATA / OUT", table_cell), Paragraph("GPIO 4", table_cell_bold), Paragraph("Digital GPIO", table_cell), Paragraph("One-wire digital signal", table_cell)],
-        [Paragraph("Soil Moisture", table_cell_bold), Paragraph("AOUT", table_cell), Paragraph("GPIO 35", table_cell_bold), Paragraph("ADC1_CH7", table_cell), Paragraph("Analog 12-bit moisture voltage", table_cell)],
-        [Paragraph("Rain Sensor", table_cell_bold), Paragraph("AOUT", table_cell), Paragraph("GPIO 34", table_cell_bold), Paragraph("ADC1_CH6", table_cell), Paragraph("Analog 12-bit precipitation level", table_cell)],
-        [Paragraph("Status LED", table_cell_bold), Paragraph("Anode (+)", table_cell), Paragraph("GPIO 2", table_cell_bold), Paragraph("Digital Output", table_cell), Paragraph("Blinks on successful transmission", table_cell)],
-        [Paragraph("All Sensors", table_cell_bold), Paragraph("VCC / GND", table_cell), Paragraph("3.3V / GND", table_cell_bold), Paragraph("Power Rails", table_cell), Paragraph("Regulated 3.3V DC rail", table_cell)],
+    # 1. INTRODUCTION
+    story.append(Paragraph("1. INTRODUCTION", h1_style))
+    intro_p1 = (
+        "Agriculture is the primary livelihood for millions and forms the backbone of global food security. "
+        "However, unpredictable environmental fluctuations and the unchecked spread of crop diseases, particularly "
+        "foliar fungal blights and mildews, result in catastrophic yield losses each season. Traditional farming "
+        "methodologies depend heavily on manual physical observation of visual leaf symptoms. Often, by the time visible "
+        "foliar damage or necrotic spotting appears to the naked eye, the pathogen incubation cycle is already advanced, "
+        "rendering late fungicide applications expensive and largely ineffective."
+    )
+    intro_p2 = (
+        "To address this critical issue, this project proposes an IoT-based Plant Disease Detection and Microclimate "
+        "Early Warning System named <b>FloraGuard IoT</b>. The system continuously acquires ambient temperature and "
+        "humidity via a DHT11 sensor, volumetric soil moisture through a capacitive soil sensor, and surface leaf wetness "
+        "via a conductive precipitation grid. These microclimatic variables are processed by an ESP32 microcontroller and "
+        "streamed via Wi-Fi to a containerized FastAPI cloud server and SQLite3 database. The backend executes an "
+        "automated epidemiological Mills Period infection model to compute real-time disease risk indexes and alert "
+        "growers before visible foliar destruction occurs."
+    )
+    intro_p3 = (
+        "This solution provides a low-cost, accurate, and scalable approach to precision crop health management, "
+        "minimizing unnecessary chemical spray cycles while drastically reducing manual field scouting effort."
+    )
+    story.append(Paragraph(intro_p1, body_style))
+    story.append(Paragraph(intro_p2, body_style))
+    story.append(Paragraph(intro_p3, body_style))
+
+    # 2. AIM OF THE PROJECT
+    story.append(Paragraph("2. AIM OF THE PROJECT", h1_style))
+    aim_text = (
+        "The primary aim of this project is to design, develop, and deploy an IoT-enabled microclimate telemetry and "
+        "automated plant disease early warning system that continuously monitors crop canopy metrics, calculates fungal "
+        "pathogen germination risks in real time, and alerts farmers through an interactive live dashboard."
+    )
+    story.append(Paragraph(aim_text, body_style))
+
+    # 3. OBJECTIVES
+    story.append(Paragraph("3. OBJECTIVES", h1_style))
+    objs = [
+        "To acquire real-time ambient temperature and humidity using a calibrated DHT11 digital sensor module.",
+        "To measure volumetric soil moisture levels using a corrosion-resistant capacitive soil moisture probe.",
+        "To monitor surface leaf wetness and precipitation events using a nickel-coated conductive rain sensor grid.",
+        "To aggregate, filter, and transmit sensor telemetry from an ESP32 microcontroller to the cloud backend via Wi-Fi.",
+        "To implement an algorithmic disease risk assessment engine based on the botanical Mills Period infection model.",
+        "To provide long-term historical persistence of sensor records using an SQLite3 relational database.",
+        "To build a responsive, zero-latency web dashboard with WebSocket streaming and cloud accessibility (Render/Docker)."
     ]
-    t_pin = Table(pin_data, colWidths=[80, 75, 75, 95, 155])
+    for obj in objs:
+        story.append(Paragraph(f"• {obj}", bullet_style))
+
+    # 4. EXISTING SYSTEM
+    story.append(Paragraph("4. EXISTING SYSTEM", h1_style))
+    story.append(Paragraph("Existing agricultural disease monitoring methods primarily rely on physical inspections and static weather forecasts.", body_style))
+    story.append(Paragraph("Disadvantages:", h2_style))
+    disadvs = [
+        "Manual leaf scouting is labor-intensive, error-prone, and impractical for large acreages.",
+        "Visual symptoms appear only after pathogen colonization and cellular tissue damage have already occurred.",
+        "Regional weather forecasts lack localized canopy microclimate precision (temperature, dew point, leaf wetness).",
+        "Over-reliance on routine calendar-based fungicide sprays leads to chemical wastage, soil toxicity, and pest resistance.",
+        "Lack of centralized historical telemetry persistence and automated notification mechanisms."
+    ]
+    for d in disadvs:
+        story.append(Paragraph(f"• {d}", bullet_style))
+
+    # 5. PROPOSED SYSTEM
+    story.append(Paragraph("5. PROPOSED SYSTEM", h1_style))
+    prop_text = (
+        "The proposed system introduces an autonomous IoT sensing station combined with edge processing and cloud-hosted "
+        "epidemiological analytics. Multi-parameter sensor nodes acquire continuous canopy metrics. The ESP32 edge processor "
+        "applies digital moving-average noise filtering and posts structured JSON packets to the cloud service. "
+        "The FastAPI backend correlates sustained humidity (>75%), optimal spore incubation temperatures (18–28°C), and "
+        "leaf surface moisture duration to compute a 0–100 Disease Risk Index. When critical thresholds are breached, the system "
+        "automatically triggers risk level warnings (Low, Moderate, High) with immediate agronomic remediation guidance on the "
+        "live dashboard. This eliminates guesswork and enables preventative crop defense."
+    )
+    story.append(Paragraph(prop_text, body_style))
+
+    # 6. SYSTEM ARCHITECTURE
+    story.append(Paragraph("6. SYSTEM ARCHITECTURE", h1_style))
+    story.append(Paragraph("The architecture comprises two main operational tiers — Device Layer and Cloud/Application Layer.", body_style))
+    
+    story.append(Paragraph("6.1 Hardware Components", h2_style))
+    hw_comps = [
+        "<b>ESP32 DevKit V1:</b> 32-bit dual-core 240MHz microcontroller with built-in 2.4 GHz Wi-Fi and 12-bit ADC channels.",
+        "<b>DHT11 Sensor:</b> Single-bus digital sensor measuring temperature (0–50°C) and relative humidity (20–90% RH).",
+        "<b>Capacitive Soil Moisture Probe v1.2:</b> Dielectric permittivity analog sensor resistant to soil electrolytic corrosion.",
+        "<b>Rain / Leaf Wetness Module:</b> Conductive interdigital trace board tracking raindrop impact and foliar dew moisture.",
+        "<b>Breadboard & Jumper Wires:</b> Breadboard layout for stable sensor bus routing and 3.3V power rails.",
+        "<b>Power Supply (5V / Micro-USB):</b> Regulated power distribution for continuous edge acquisition."
+    ]
+    for hw in hw_comps:
+        story.append(Paragraph(f"• {hw}", bullet_style))
+
+    story.append(Paragraph("6.2 Software Components", h2_style))
+    sw_comps = [
+        "<b>Arduino IDE & C++:</b> Embedded firmware development, ADC moving-average calibration, and WiFiClientSecure HTTP POST engine.",
+        "<b>FastAPI (Python 3.11):</b> Asynchronous high-performance RESTful API backend handling telemetry ingestion and risk evaluation.",
+        "<b>SQLite3 Database:</b> Embedded SQL relational database (`floraguard.db`) storing structured historical sensor readings.",
+        "<b>WebSockets Protocol:</b> Full-duplex persistent stream pushing real-time metrics to browser sessions with zero latency.",
+        "<b>Responsive Web Dashboard:</b> User interface built using HTML5, Tailwind CSS, Lucide icons, and Chart.js rolling line charts.",
+        "<b>Docker & Docker Compose:</b> Multi-platform containerization for isolated packaging and automated cloud deployment."
+    ]
+    for sw in sw_comps:
+        story.append(Paragraph(f"• {sw}", bullet_style))
+
+    # 7. WORKING PRINCIPLE
+    story.append(Paragraph("7. WORKING PRINCIPLE", h1_style))
+    steps = [
+        "<b>Initialization:</b> The ESP32 boots, establishes secure Wi-Fi association with the local wireless network, and tests sensor pins.",
+        "<b>Data Acquisition:</b> On a 3-second cycle, the ESP32 reads DHT11 digital frames and samples 10 consecutive ADC conversions for soil and leaf wetness.",
+        "<b>Data Normalization:</b> Analog ADC values (0–4095) are mathematically calibrated to percentage scales (0.0% – 100.0%).",
+        "<b>JSON Serialization:</b> Telemetry is formatted into structured JSON and dispatched via HTTP/HTTPS POST to `/api/telemetry`.",
+        "<b>Pathogen Risk Analysis:</b> The backend executes Mills Period rule matrices, grading spore germination viability from Low to Critical.",
+        "<b>Database Archival:</b> All readings, calculated risk scores, device identity, and timestamps are committed to SQLite3 table `sensor_telemetry`.",
+        "<b>Real-Time Visualization:</b> Records are broadcast through WebSockets and displayed live on dashboard cards, gauges, charts, and table."
+    ]
+    for i, st in enumerate(steps, 1):
+        story.append(Paragraph(f"{i}. {st}", bullet_style))
+
+    # 8. CONNECTION DETAILS
+    story.append(Paragraph("8. CONNECTION DETAILS", h1_style))
+    pin_data = [
+        [Paragraph("Component", table_head), Paragraph("Pin Name", table_head), Paragraph("Signal Type", table_head), Paragraph("ESP32 Pin", table_head), Paragraph("Voltage", table_head)],
+        [Paragraph("DHT11", table_cell_bold), Paragraph("DATA / OUT", table_cell), Paragraph("Digital GPIO", table_cell), Paragraph("GPIO 4", table_cell_bold), Paragraph("3.3V", table_cell)],
+        [Paragraph("DHT11", table_cell_bold), Paragraph("VCC / GND", table_cell), Paragraph("Power Rails", table_cell), Paragraph("3.3V / GND", table_cell), Paragraph("3.3V / 0V", table_cell)],
+        [Paragraph("Capacitive Soil Probe", table_cell_bold), Paragraph("AOUT (Analog)", table_cell), Paragraph("ADC1_CH7", table_cell), Paragraph("GPIO 35", table_cell_bold), Paragraph("3.3V", table_cell)],
+        [Paragraph("Capacitive Soil Probe", table_cell_bold), Paragraph("VCC / GND", table_cell), Paragraph("Power Rails", table_cell), Paragraph("3.3V / GND", table_cell), Paragraph("3.3V / 0V", table_cell)],
+        [Paragraph("Rain / Leaf Wetness", table_cell_bold), Paragraph("AOUT (Analog)", table_cell), Paragraph("ADC1_CH6", table_cell), Paragraph("GPIO 34", table_cell_bold), Paragraph("3.3V", table_cell)],
+        [Paragraph("Rain / Leaf Wetness", table_cell_bold), Paragraph("VCC / GND", table_cell), Paragraph("Power Rails", table_cell), Paragraph("3.3V / GND", table_cell), Paragraph("3.3V / 0V", table_cell)],
+        [Paragraph("Status Indicator LED", table_cell_bold), Paragraph("Anode (+)", table_cell), Paragraph("Digital Output", table_cell), Paragraph("GPIO 2", table_cell_bold), Paragraph("3.3V", table_cell)],
+    ]
+    t_pin = Table(pin_data, colWidths=[100, 85, 95, 95, 105])
     t_pin.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#EEEEEE")),
-        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('TOPPADDING', (0,0), (-1,-1), 3),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
-        ('LEFTPADDING', (0,0), (-1,-1), 6),
-        ('RIGHTPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 2.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+        ('RIGHTPADDING', (0,0), (-1,-1), 5),
     ]))
     story.append(t_pin)
 
-    # 3. COMMUNICATION ARCHITECTURE
-    story.append(Paragraph("3. Data Communication Architecture", h1_style))
-    comm_text = (
-        "The ESP32 firmware reads sensors on a 3-second cycle (3000 ms), applies a 10-sample moving average filter on analog "
-        "channels to reject ADC noise, and serializes the parameters into a JSON object. The payload is posted via HTTP or "
-        "HTTPS (utilizing <code>WiFiClientSecure</code> with certificate validation bypass for lightweight IoT transmission) "
-        "to the FastAPI backend endpoint <code>/api/telemetry</code>:"
+    # 9. CLOUD & CONTAINER HOSTING
+    story.append(Paragraph("9. CLOUD & CONTAINER HOSTING", h1_style))
+    cloud_p = (
+        "The backend server is containerized and hosted in the cloud using standard container orchestration tooling:"
     )
-    story.append(Paragraph(comm_text, body_style))
-
-    json_snippet = (
-        "{\n"
-        '  "device_id": "ESP32-AGRI-01",\n'
-        '  "temperature": 27.3,\n'
-        '  "humidity": 74.0,\n'
-        '  "soil_moisture": 44.0,\n'
-        '  "rain_intensity": 23.2,\n'
-        '  "source": "HARDWARE"\n'
-        "}"
-    )
-    t_code = Table([[Paragraph(json_snippet.replace('\n', '<br/>').replace(' ', '&nbsp;'), code_style)]], colWidths=[480])
-    t_code.setStyle(TableStyle([
-        ('BOX', (0,0), (-1,-1), 1, colors.black),
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F5F5F5")),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ('LEFTPADDING', (0,0), (-1,-1), 8),
-        ('RIGHTPADDING', (0,0), (-1,-1), 8),
-    ]))
-    story.append(t_code)
-
-    # 4. DATABASE DESIGN & PERSISTENCE
-    story.append(Paragraph("4. Database Design & Relational Persistence", h1_style))
-    db_text = (
-        "To fulfill the persistent storage criteria, the application integrates an <b>SQLite3</b> database "
-        "(<code>floraguard.db</code>) managed natively by Python. Every incoming hardware or simulated reading is validated "
-        "against Pydantic schemas and permanently saved into the <code>sensor_telemetry</code> relational table."
-    )
-    story.append(Paragraph(db_text, body_style))
-
-    schema_data = [
-        [Paragraph("Field", table_head), Paragraph("Type", table_head), Paragraph("Constraints", table_head), Paragraph("Description", table_head)],
-        [Paragraph("id", table_cell_bold), Paragraph("INTEGER", table_cell), Paragraph("PRIMARY KEY AUTOINCREMENT", table_cell), Paragraph("Unique sequential reading ID", table_cell)],
-        [Paragraph("device_id", table_cell_bold), Paragraph("TEXT", table_cell), Paragraph("NOT NULL", table_cell), Paragraph("Device identity string (e.g. ESP32-AGRI-01)", table_cell)],
-        [Paragraph("temperature", table_cell_bold), Paragraph("REAL", table_cell), Paragraph("NOT NULL", table_cell), Paragraph("Air temperature in degrees Celsius", table_cell)],
-        [Paragraph("humidity", table_cell_bold), Paragraph("REAL", table_cell), Paragraph("NOT NULL", table_cell), Paragraph("Relative humidity percentage", table_cell)],
-        [Paragraph("soil_moisture", table_cell_bold), Paragraph("REAL", table_cell), Paragraph("NOT NULL", table_cell), Paragraph("Volumetric soil moisture percentage", table_cell)],
-        [Paragraph("rain_intensity", table_cell_bold), Paragraph("REAL", table_cell), Paragraph("NOT NULL", table_cell), Paragraph("Precipitation intensity percentage", table_cell)],
-        [Paragraph("risk_score", table_cell_bold), Paragraph("INTEGER", table_cell), Paragraph("NOT NULL", table_cell), Paragraph("Mills Period pathogen index (0-100)", table_cell)],
-        [Paragraph("risk_level", table_cell_bold), Paragraph("TEXT", table_cell), Paragraph("NOT NULL", table_cell), Paragraph("Risk status (LOW / MODERATE / HIGH / CRITICAL)", table_cell)],
-        [Paragraph("diagnosis", table_cell_bold), Paragraph("TEXT", table_cell), Paragraph("NOT NULL", table_cell), Paragraph("Epidemiological pathogen diagnosis", table_cell)],
-        [Paragraph("source", table_cell_bold), Paragraph("TEXT", table_cell), Paragraph("NOT NULL", table_cell), Paragraph("HARDWARE or SIMULATION marker", table_cell)],
-        [Paragraph("timestamp", table_cell_bold), Paragraph("TEXT", table_cell), Paragraph("NOT NULL", table_cell), Paragraph("Packet time (HH:MM:SS)", table_cell)],
-        [Paragraph("created_at", table_cell_bold), Paragraph("DATETIME", table_cell), Paragraph("DEFAULT CURRENT_TIMESTAMP", table_cell), Paragraph("Server-side ingestion timestamp", table_cell)],
+    story.append(Paragraph(cloud_p, body_style))
+    cloud_items = [
+        "<b>Cloud Web Service:</b> Deployed on <b>Render.com</b> via automated CI/CD directly synced to GitHub repository (`https://github.com/Nehusam/floraguard-IoT.git`).",
+        "<b>Public Endpoint:</b> Live public HTTPS service accessible at <b>https://floraguard-iot.onrender.com</b>.",
+        "<b>Docker Setup:</b> Standard `Dockerfile` with Python 3.11-slim, multi-stage dependency isolation, and port 8000 exposed.",
+        "<b>Deployment via Docker Compose:</b> Unified orchestration mounting `floraguard.db` onto a persistent storage volume.",
+        "<b>Database Management Viewer:</b> Dedicated administrative web route at `/database` for visual inspection of persistent SQLite3 records during evaluations."
     ]
-    t_schema = Table(schema_data, colWidths=[90, 65, 135, 190])
-    t_schema.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#EEEEEE")),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('TOPPADDING', (0,0), (-1,-1), 2.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
-        ('LEFTPADDING', (0,0), (-1,-1), 5),
-        ('RIGHTPADDING', (0,0), (-1,-1), 5),
-    ]))
-    story.append(t_schema)
-    story.append(Spacer(1, 4))
+    for ci in cloud_items:
+        story.append(Paragraph(f"• {ci}", bullet_style))
 
-    story.append(Paragraph("Database Endpoints & Presentation Viewer", h2_style))
-    db_features = [
-        "<b>REST API (<code>GET /api/database/records</code>):</b> Supports limit parameters and source filtering (<code>HARDWARE</code> vs <code>SIMULATION</code>), returning full audit counts and JSON data.",
-        "<b>Visual Database Viewer (<code>GET /database</code>):</b> A dedicated, clean web UI created specifically for viva and presentation sessions. Features real-time statistics cards, dynamic filtering, structured risk tags, and 10-second auto-refresh."
+    # 10. RESULTS
+    story.append(Paragraph("10. RESULTS", h1_style))
+    story.append(Paragraph("The implemented FloraGuard IoT system successfully achieves:", body_style))
+    res_items = [
+        "Measures real-time air temperature, canopy humidity, volumetric soil moisture, and leaf wetness accurately.",
+        "Calculates botanical Mills Period infection risks continuously and categorizes pathogen severity (Low, Moderate, High).",
+        "Dispatches immediate microclimate remediation guidance when humidity exceeds 80% or leaf surface wetness is prolonged.",
+        "Stores over 900+ consecutive hardware telemetry records in persistent SQLite database storage.",
+        "Presents dynamic rolling telemetry charts and live metric cards across both local and public cloud dashboards without manual browser refreshes."
     ]
-    for feat in db_features:
-        story.append(Paragraph(f"• {feat}", bullet_style))
+    for r in res_items:
+        story.append(Paragraph(f"• {r}", bullet_style))
 
-    # 5. CONTAINERIZATION & CLOUD DEPLOYMENT
-    story.append(Paragraph("5. Containerization & Cloud Deployment", h1_style))
-    docker_text = (
-        "The application is fully containerized using <b>Docker</b> and <b>Docker Compose</b> to ensure guaranteed consistency "
-        "across Windows, Linux, and Cloud environments. The image packages Python 3.11-slim, all dependencies, and persistent "
-        "volume mounts for <code>floraguard.db</code>.<br/>"
-        "The project is publicly deployed on <b>Render.com</b> directly from the GitHub repository (<code>https://github.com/Nehusam/floraguard-IoT</code>), "
-        "providing a high-availability cloud endpoint at <b>https://floraguard-iot.onrender.com</b>."
-    )
-    story.append(Paragraph(docker_text, body_style))
-
-    # 6. REAL-TIME DASHBOARD
-    story.append(Paragraph("6. Real-Time Botanical Dashboard", h1_style))
-    dash_items = [
-        "<b>Clean Minimalist Interface:</b> Built with HTML5, Tailwind CSS, Lucide icons, and Chart.js, designed specifically for rapid comprehension without visual clutter.",
-        "<b>4 Live Telemetry Gauges:</b> Ambient Air Temperature (°C), Canopy Relative Humidity (% RH), Soil Volumetric Moisture (%), and Rain Precipitation (%).",
-        "<b>Mills Period Pathogen Risk Engine:</b> Evaluates infection thresholds (e.g. sustained humidity >70%, temperature 18-28°C, and surface moisture) to calculate an aggregate risk score (0-100) and issue instant preventive actions.",
-        "<b>WebSocket Real-Time Broadcast (<code>/ws/telemetry</code>):</b> Directly pushes live sensor events to connected browsers with sub-millisecond overhead.",
-        "<b>Dual Interactive Historical Charts:</b> Real-time rolling graphs tracking atmospheric trends and hydrological balance over time.",
-        "<b>Recent Telemetry Audit Log:</b> Real-time table displaying recent packets with one-click CSV export and a link to the visual database viewer."
+    # 11. ADVANTAGES
+    story.append(Paragraph("11. ADVANTAGES", h1_style))
+    adv_items = [
+        "<b>Preventative Defense:</b> Detects favorable disease environments hours before visible tissue rot takes hold.",
+        "<b>Automated Monitoring:</b> Eliminates repetitive manual physical field inspections and reduces labor expenditure.",
+        "<b>Chemical Optimization:</b> Eliminates unnecessary preventative fungicide spraying, reducing environmental chemical load.",
+        "<b>Zero-Latency Telemetry:</b> WebSocket push architecture updates browser gauges instantly upon each 3-second cycle.",
+        "<b>Cost-Effective Hardware:</b> Built using readily available, modular, low-power components ideal for rural farm adoption.",
+        "<b>Dual Local/Cloud Accessibility:</b> Operates equally well on isolated local farm networks and public cloud endpoints."
     ]
-    for item in dash_items:
-        story.append(Paragraph(f"• {item}", bullet_style))
+    for a in adv_items:
+        story.append(Paragraph(f"• {a}", bullet_style))
 
-    # 7. TEST MATRIX & VERIFICATION
-    story.append(Paragraph("7. Test Matrix & Experimental Verification", h1_style))
-    
-    test_data = [
-        [Paragraph("Test ID", table_head), Paragraph("Test Case", table_head), Paragraph("Procedure", table_head), Paragraph("Expected Result", table_head), Paragraph("Status", table_head)],
-        [Paragraph("TC-01", table_cell_bold), Paragraph("Wi-Fi Connection", table_cell), Paragraph("Power ESP32; authenticate to AP", table_cell), Paragraph("IP assigned, serial prints success", table_cell), Paragraph("<b>PASS</b>", table_cell)],
-        [Paragraph("TC-02", table_cell_bold), Paragraph("DHT11 Sampling", table_cell), Paragraph("Read temp and humidity registers", table_cell), Paragraph("Valid numeric °C and % values (non-NaN)", table_cell), Paragraph("<b>PASS</b>", table_cell)],
-        [Paragraph("TC-03", table_cell_bold), Paragraph("Soil Probe ADC", table_cell), Paragraph("Place probe in dry soil vs wet soil", table_cell), Paragraph("Analog percentage scales 15% to 85%", table_cell), Paragraph("<b>PASS</b>", table_cell)],
-        [Paragraph("TC-04", table_cell_bold), Paragraph("Rain Sensor Grid", table_cell), Paragraph("Apply water droplet onto sensor plate", table_cell), Paragraph("Rain intensity jumps from 0% to >80%", table_cell), Paragraph("<b>PASS</b>", table_cell)],
-        [Paragraph("TC-05", table_cell_bold), Paragraph("HTTP/HTTPS Telemetry", table_cell), Paragraph("ESP32 POST to /api/telemetry", table_cell), Paragraph("HTTP 200 response with risk scoring", table_cell), Paragraph("<b>PASS</b>", table_cell)],
-        [Paragraph("TC-06", table_cell_bold), Paragraph("Database Logging", table_cell), Paragraph("Inspect SQLite3 table records", table_cell), Paragraph("460+ rows recorded with HARDWARE tag", table_cell), Paragraph("<b>PASS</b>", table_cell)],
-        [Paragraph("TC-07", table_cell_bold), Paragraph("Live Dashboard Sync", table_cell), Paragraph("Open web dashboard on browser", table_cell), Paragraph("Badge switches to LIVE HARDWARE DATA", table_cell), Paragraph("<b>PASS</b>", table_cell)],
-        [Paragraph("TC-08", table_cell_bold), Paragraph("Cloud Deployment", table_cell), Paragraph("Access Render public URL", table_cell), Paragraph("Fully operational live cloud service", table_cell), Paragraph("<b>PASS</b>", table_cell)],
+    # 12. APPLICATIONS
+    story.append(Paragraph("12. APPLICATIONS", h1_style))
+    app_items = [
+        "<b>Greenhouse Climate Automation:</b> Automated trigger of ventilation fans and dehumidifiers when mildew risk escalates.",
+        "<b>Horticulture & Vineyards:</b> Early detection of Black Rot and Downy Mildew in high-value grape and berry crops.",
+        "<b>Open Field Precision Farming:</b> Microclimate mapping to optimize localized drip irrigation timing.",
+        "<b>Agricultural Research Institutes:</b> Accurate epidemiological record keeping for crop cultivar disease resistance trials."
     ]
-    t_test = Table(test_data, colWidths=[40, 95, 130, 165, 50])
-    t_test.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#EEEEEE")),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-        ('ALIGN', (4,1), (4,-1), 'CENTER'),
-        ('TOPPADDING', (0,0), (-1,-1), 2.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
-        ('LEFTPADDING', (0,0), (-1,-1), 5),
-        ('RIGHTPADDING', (0,0), (-1,-1), 5),
-    ]))
-    story.append(t_test)
+    for ap in app_items:
+        story.append(Paragraph(f"• {ap}", bullet_style))
 
-    # 8. CONCLUSION
-    story.append(Paragraph("8. Conclusion", h1_style))
+    # 13. FUTURE ENHANCEMENTS
+    story.append(Paragraph("13. FUTURE ENHANCEMENTS", h1_style))
+    enh_items = [
+        "<b>Automated Actuator Integration:</b> Relay module triggering automated misting systems, exhaust fans, or solenoid irrigation valves.",
+        "<b>GSM/SMS Push Alerts:</b> Direct SMS notification to farmers' phones when cellular network connectivity is the only option.",
+        "<b>LoRaWAN Long-Range Nodes:</b> Multi-node mesh spanning expansive hectares without requiring local Wi-Fi coverage.",
+        "<b>Solar Power Harvesting:</b> Standalone battery-buffered solar charging for continuous off-grid outdoor deployment."
+    ]
+    for e in enh_items:
+        story.append(Paragraph(f"• {e}", bullet_style))
+
+    # 14. CONCLUSION
+    story.append(Paragraph("14. CONCLUSION", h1_style))
     concl_text = (
-        "The <b>FloraGuard IoT</b> platform completely fulfills all five core assignment requirements prescribed by the "
-        "MCA 24MCAT213 curriculum: (1) physical multi-sensor interfacing on ESP32, (2) reliable wireless telemetry transmission, "
-        "(3) standardized containerization with Docker, (4) robust relational database persistence in SQLite3, and (5) an "
-        "advanced, responsive real-time web dashboard with cloud accessibility. The solution provides a scalable, industrial-grade "
-        "foundation for modern automated microclimate and precision crop disease monitoring."
+        "The <b>FloraGuard IoT</b> system delivers an effective, intelligent, and affordable microclimate early warning "
+        "solution to mitigate crop pathogen risks. By combining physical sensor acquisition (ESP32), algorithmic disease "
+        "risk models (Mills Period baseline), SQLite3 relational persistence, containerized cloud hosting (Docker/Render), "
+        "and a real-time web dashboard, the project lays a scalable, modern foundation for precision smart agriculture."
     )
     story.append(Paragraph(concl_text, body_style))
 
+    # 15. PROJECT DESIGN & DATA FLOW
+    story.append(Paragraph("15. PROJECT DESIGN (DATA FLOW)", h1_style))
+    flow_steps = [
+        "1. Physical Sensors (DHT11, Soil, Rain) → ESP32: Samples analog and digital microclimate readings.",
+        "2. ESP32 → FastAPI Backend (HTTP/HTTPS): Packages JSON payload and posts to `/api/telemetry` over Wi-Fi.",
+        "3. FastAPI → SQLite3 (`floraguard.db`): Automatically commits verified reading into `sensor_telemetry` table.",
+        "4. FastAPI → Mills Period Engine: Evaluates fungal infection factors and determines real-time risk score.",
+        "5. FastAPI → Dashboard UI (WebSockets & HTTP Sync): Broadcasts live metrics to browser cards, charts, and table."
+    ]
+    for fs in flow_steps:
+        story.append(Paragraph(fs, body_style))
+
+    # Build Document
     doc.build(story, canvasmaker=NumberedCanvas)
-    print(f"Monochrome PDF generated successfully: {filename}")
+    print(f"Matched format PDF generated successfully: {filename}")
 
 if __name__ == "__main__":
     build_pdf()
